@@ -126,6 +126,7 @@ The questions are intentionally different.
 | String length | [FSM_LookupBenchmarks.cs](FSM_Benchmark/FSM_LookupBenchmarks.cs) | How does string-key size affect registry lookup? |
 | Lifecycle mutation | [FSM_SurfaceLifecycleBenchmarks.cs](FSM_Benchmark/FSM_SurfaceLifecycleBenchmarks.cs) | What do adding/removing/destroying runtime structures cost? |
 | Error handling | [FSM_ErrorHandlingBenchmarks.cs](FSM_Benchmark/FSM_ErrorHandlingBenchmarks.cs) | What does resilient error reporting actually cost? |
+| Thrown callback path | [FSM_ThrownErrorExecutionBenchmarks.cs](FSM_Benchmark/FSM_ThrownErrorExecutionBenchmarks.cs) | What does a real user callback exception cost when FSM_API catches and reports it? |
 | Timers | [FSM_TimerBenchmarks.cs](FSM_Benchmark/FSM_TimerBenchmarks.cs) | What does the timer subsystem cost independently? |
 | Allocation | All benchmark classes | How many bytes and GC events accompany each operation? |
 
@@ -636,9 +637,9 @@ FSM_ErrorHandlingBenchmarks.cs measures the explicit error subsystem, including:
 - resetting one definition;
 - resetting all error state.
 
-The next refinement will be to benchmark the **actual thrown-user-callback path** separately from the explicit error-reporting methods.
+The actual thrown-user-callback path is now benchmarked separately in [FSM_ThrownErrorExecutionBenchmarks.cs](FSM_Benchmark/FSM_ThrownErrorExecutionBenchmarks.cs).
 
-That distinction matters.
+That distinction matters because explicit error reporting and a real exception flowing through FSMHandle.Update are not the same workload.
 
 ~~~text
 Normal callback
@@ -1070,6 +1071,7 @@ FSM_API_Benchmark
 │   ├── [FSM_HandleSurfaceBenchmarks.cs](FSM_Benchmark/FSM_HandleSurfaceBenchmarks.cs)
 │   ├── [FSM_InteractionBenchmarks.cs](FSM_Benchmark/FSM_InteractionBenchmarks.cs)
 │   ├── [FSM_ErrorHandlingBenchmarks.cs](FSM_Benchmark/FSM_ErrorHandlingBenchmarks.cs)
+│   ├── [FSM_ThrownErrorExecutionBenchmarks.cs](FSM_Benchmark/FSM_ThrownErrorExecutionBenchmarks.cs)
 │   ├── [FSM_TimerBenchmarks.cs](FSM_Benchmark/FSM_TimerBenchmarks.cs)
 │   └── [FSM_LookupBenchmarks.cs](FSM_Benchmark/FSM_LookupBenchmarks.cs)
 │
@@ -1205,6 +1207,7 @@ The benchmark suite now covers the major runtime dimensions of the FSM_API:
 - [x] Lifecycle mutation surface
 - [x] Handle manual-operation surface
 - [x] Error reporting and error-counter operations
+- [x] Actual thrown-callback failure path
 - [x] Timer subsystem
 - [x] Memory allocation diagnostics
 - [x] CPU diagnostics
