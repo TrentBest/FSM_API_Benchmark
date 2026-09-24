@@ -20,6 +20,7 @@ namespace FSM_Benchmark
         {
             BenchmarkSupport.Reset();
             BenchmarkSupport.BuildDefinitions(1, InstanceCount);
+            FSM_API.Interaction.Update(BenchmarkSupport.Group);
         }
 
         [GlobalCleanup]
