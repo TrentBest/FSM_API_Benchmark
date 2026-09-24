@@ -26,6 +26,9 @@ namespace FSM_Benchmark
             BenchmarkSupport.Reset();
             _handle = BenchmarkSupport.BuildSingleHandle(transitionCount: 0);
             _directTickAll = BenchmarkSupport.CreateDirectTickAllDelegate();
+            // Prime the instance so measured updates represent steady-state execution
+            // rather than the one-time OnEnter path.
+            _handle.Update(BenchmarkSupport.Group);
         }
 
         [GlobalCleanup]
