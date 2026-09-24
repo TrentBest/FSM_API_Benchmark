@@ -11,6 +11,22 @@ This repository is the performance laboratory for
 
 The purpose is not to produce one impressive nanosecond number.
 
+The deeper purpose is to understand the cost surface of the API so that developers can choose the appropriate abstraction without unnecessary cognitive friction.
+
+FSM_API is intentionally designed around two complementary representations:
+
+- a string-backed authoring model for human-readable development, debugging, tooling, and low-friction adoption;
+- an integer-backed runtime model for workloads where transition density, instance count, or other measured characteristics make representation cost significant.
+
+The integer side is not intended to replace the string API. It is the performance-oriented half of the same design. A future publishing pipeline can determine when the integer representation is justified rather than forcing every developer to make that decision manually.
+
+This benchmark project therefore has two jobs:
+
+1. establish what the current string-backed API actually costs;
+2. provide the measurements needed to know when a different representation is worth the additional complexity.
+
+The benchmark is not an optimization contest. It is an instrument for reducing uncertainty.
+
 The purpose is to answer a much more useful engineering question:
 
 > **What does FSM_API actually cost, and how does that cost change as the system gets larger?**
@@ -78,6 +94,36 @@ In the current FSM_API implementation, the public update path:
 So the historical **305 ns** result should be understood as a measurement of a complete update scenario, not as the intrinsic cost of one string operation.
 
 This project now decomposes that machinery.
+
+The important architectural boundary is that authoring cost and runtime cost do not have to be the same thing. FSM_API is intended to remain useful as a lightweight public library. More aggressive optimization belongs where measured workload justifies it.
+
+The longer-term Singularity Workshop direction is to perform expensive work during authoring and publication rather than repeatedly rediscovering answers at runtime:
+
+~~~text
+AUTHOR
+  │
+  ├── string-based FSM
+  ├── analysis
+  ├── baking
+  ├── arbitration
+  └── performance observation
+          │
+          ▼
+       PUBLISH
+          │
+          ▼
+      runtime manifest
+          │
+          ├── baked decisions
+          ├── capacity/allocation requirements
+          ├── data recipes
+          └── runtime representation
+          │
+          ▼
+       EXECUTE
+~~~
+
+That future publishing architecture is not part of the current benchmarked FSM_API. It is documented here because it explains why the benchmark measures representation, scaling, allocation, lifecycle, and auxiliary subsystem costs separately: those measurements eventually inform decisions about what should be baked, what should remain dynamic, and when an integer-backed representation is justified.
 
 This benchmark suite now has a source file for each major measurement dimension. Start with the [execution benchmarks](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) to understand the original update number, then follow the [state](FSM_Benchmark/FSM_StateScalingBenchmarks.cs), [transition](FSM_Benchmark/FSM_TransitionScalingBenchmarks.cs), [runtime scaling](FSM_Benchmark/FSM_ScalingBenchmarks.cs), [lookup](FSM_Benchmark/FSM_LookupBenchmarks.cs), and [creation](FSM_Benchmark/FSM_CreationBenchmarks.cs) suites. Shared fixture construction lives in [BenchmarkSupport.cs](FSM_Benchmark/BenchmarkSupport.cs).
 
@@ -540,6 +586,108 @@ Those are fundamentally different engineering facts.
 
 ---
 
+# 🧠 Authoring Cost vs. Runtime Cost
+
+A central principle of the broader FSM architecture is that the cheapest runtime is often the runtime that does not have to make a decision at runtime.
+
+The benchmark lab currently measures the public FSM_API itself. It does not yet benchmark a publisher, MetaDev system, Warehouse-backed runtime, or FSM_COS. Those are future layers.
+
+The intended direction is:
+
+~~~text
+Editor / Authoring
+    │
+    ├── human-friendly strings
+    ├── expensive analysis
+    ├── baking
+    ├── arbitration
+    └── performance observation
+             │
+             ▼
+        Publication
+             │
+             ▼
+          Manifest
+             │
+             ├── baked arbitration result
+             ├── expected capacities
+             ├── subdivision/allocation recipe
+             ├── data sources
+             └── selected runtime representation
+             │
+             ▼
+          Runtime
+             │
+             └── execute the prepared result
+~~~
+
+This creates an important distinction for interpreting benchmarks:
+
+> A cost is not automatically a runtime problem merely because it is expensive.
+
+An expensive editor-time calculation may be entirely acceptable if it removes substantially more work from every subsequent runtime update.
+
+Likewise, an inexpensive authoring operation can still be undesirable if it forces repeated dynamic discovery, allocation, arbitration, or conversion at runtime.
+
+The future MetaDev concept is intended to record extrinsic metadata about the authored system: observed performance characteristics, allocation behavior, capacity requirements, and other information useful during publication. It can then surface threshold violations and suggest concrete remedies.
+
+One anticipated remedy is preallocation.
+
+If publication can determine:
+
+- the exact runtime capacity required;
+- how that capacity should be subdivided;
+- and which data sources populate it;
+
+then the published manifest can carry those requirements forward instead of requiring the runtime to repeatedly grow and reorganize structures.
+
+That is a future architecture, not a claim about the current FSM_API implementation.
+
+---
+
+# 🔀 String and Integer Representations
+
+FSM_API is not being designed as:
+
+~~~text
+strings → eventually throw strings away → integers
+~~~
+
+It is being designed as:
+
+~~~text
+                 FSM_API
+                    │
+          ┌─────────┴─────────┐
+          │                   │
+     String-backed       Integer-backed
+       authoring            runtime
+          │                   │
+    human-friendly       performance-oriented
+    low-friction         dense representation
+    inspectable          hot workloads
+          │                   │
+          └─────────┬─────────┘
+                    │
+              bridge / publish
+~~~
+
+The string side is valuable precisely because developers should not have to think like a CPU while creating an FSM.
+
+The integer side exists for the workload where the measurements say that representation overhead matters.
+
+This benchmark project therefore treats string cost as a measurable characteristic, not a defect.
+
+In particular, transition scaling is expected to become increasingly interesting as the number of transitions evaluated per instance grows. If an FSM spends significant time evaluating large numbers of string-oriented transition rules, the integer-backed representation is the natural next experiment.
+
+The benchmark should answer:
+
+> At what workload does the additional complexity of integer backing buy enough runtime performance to justify using it?
+
+That is more useful than simply asking whether integers are faster.
+
+---
+
 # 🧭 From Benchmarks to a Cost Model
 
 The eventual goal is not a table of unrelated benchmark numbers.
@@ -860,6 +1008,37 @@ Likewise, a dictionary lookup can remain approximately constant-time on average 
 
 The benchmark report and the implementation should always be considered together.
 
+The same principle applies when comparing the string-backed and integer-backed halves of FSM_API. A faster representation is only useful if the workload actually spends enough time in the affected path to justify the additional abstraction.
+
+---
+
+# 🚦 Performance Thresholds Are Guidance, Not Dogma
+
+The long-term goal is not to make every developer manually optimize every FSM.
+
+A useful performance system should eventually be able to say:
+
+~~~text
+Your authored workload is within expected limits.
+    │
+    └── publish normally.
+
+Your authored workload crossed a measured threshold.
+    │
+    ├── preallocate more capacity;
+    ├── reduce unnecessary runtime work;
+    ├── bake a decision;
+    └── consider integer-backed execution.
+~~~
+
+The benchmark lab provides the evidence from which those thresholds can eventually be established.
+
+Until the workload, environment, and publication pipeline exist, the repository deliberately does not pretend to know universal thresholds.
+
+The engineering rule is:
+
+> Measure first. Then automate the advice.
+
 ---
 
 # 🧠 What We Know About the Current FSM_API Architecture
@@ -1153,6 +1332,51 @@ The goal is to build a performance map of FSM_API rather than collect isolated t
 
 ---
 
+# 🌐 Long-Term Scope
+
+This repository measures the substrate, not the entire future Singularity Workshop runtime.
+
+The broader architecture eventually aims toward micro-bundles of functionality that can be composed into manifest-driven experiences. A bundle may contain behavior, assets, data, and an FSM, and the same bundle may participate in multiple experiences.
+
+That creates a future distinction between:
+
+~~~text
+AUTHORING
+    │
+    ├── compose micro-bundles
+    ├── analyze dependencies
+    ├── arbitrate conflicts
+    ├── bake decisions
+    └── observe performance
+             │
+             ▼
+        PUBLISHED MANIFEST
+             │
+             ▼
+          FSM_COS
+             │
+             ▼
+          ANYAPP
+~~~
+
+The benchmark project does not attempt to implement that architecture prematurely.
+
+Instead, it establishes the empirical foundation underneath it.
+
+The long-term optimization opportunity is to move expensive reasoning left:
+
+> Do the hard thinking while the creator is editing. Publish the answer. Make runtime execution consume the answer.
+
+A future Warehouse-backed runtime may go further by allowing published manifests to describe exact capacity, subdivision, and data-population requirements. That is intentionally outside the current free-standing FSM_API benchmark target.
+
+The benchmark lab therefore remains focused on a simple question:
+
+> How much does the current primitive actually cost?
+
+Everything built above it should have evidence for when it is worth introducing.
+
+---
+
 # 🚦 Important Interpretation Rule
 
 A benchmark result is not automatically a problem.
@@ -1217,7 +1441,23 @@ The benchmark suite now covers the major runtime dimensions of the FSM_API:
 
 The suite is now broad enough that the next stage is **measurement, not speculation**.
 
-Run the complete matrix on the controlled Windows development machine, save the human-readable BenchmarkDotNet output, and then build the first cost map:
+The immediate objective is to establish a clean performance baseline for the current public FSM_API. The current exploratory run demonstrated the shape of several costs, but attached-debugger measurements should not be treated as final published performance claims.
+
+The next measurement pass should therefore:
+
+1. run with the debugger detached;
+2. save the complete BenchmarkDotNet output;
+3. retain CSV/Markdown/HTML artifacts produced by the run;
+4. record the exact FSM_API, .NET, BenchmarkDotNet, OS, and CPU environment;
+5. identify fixed costs;
+6. identify marginal costs;
+7. identify allocation growth;
+8. identify non-linear breakpoints;
+9. separate normal-path work from failure-path work;
+10. compare public abstractions against lower-level diagnostic equivalents;
+11. establish where the string representation begins to matter enough to justify the integer-backed path.
+
+Then build the first cost map:
 
 1. identify fixed costs;
 2. identify marginal costs;
@@ -1227,7 +1467,7 @@ Run the complete matrix on the controlled Windows development machine, save the 
 6. compare public abstractions against their lower-level diagnostic equivalents;
 7. turn the measured deltas into user-facing performance guidance.
 
-The .diagsession files from the earlier Visual Studio profiling runs are useful for diagnostics, but they are not the canonical benchmark-result format for this project. The canonical evidence should be the BenchmarkDotNet text/Markdown/CSV/JSON result for each run, accompanied by its environment.
+The .diagsession files from the earlier Visual Studio profiling runs are useful for diagnostics, but they are not the canonical benchmark-result format for this project. The canonical evidence should be the BenchmarkDotNet Markdown/CSV/HTML result set for each run, accompanied by its environment. If a future exporter adds JSON output to the run, that machine-readable artifact can be retained as well; the benchmark project should never claim an artifact exists unless the run actually produced it.
 
 That is where benchmarking becomes an engineering instrument rather than a stopwatch.
 
