@@ -79,6 +79,8 @@ So the historical **305 ns** result should be understood as a measurement of a c
 
 This project now decomposes that machinery.
 
+This benchmark suite now has a source file for each major measurement dimension. Start with the [execution benchmarks](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) to understand the original update number, then follow the [state](FSM_Benchmark/FSM_StateScalingBenchmarks.cs), [transition](FSM_Benchmark/FSM_TransitionScalingBenchmarks.cs), [runtime scaling](FSM_Benchmark/FSM_ScalingBenchmarks.cs), [lookup](FSM_Benchmark/FSM_LookupBenchmarks.cs), and [creation](FSM_Benchmark/FSM_CreationBenchmarks.cs) suites. Shared fixture construction lives in [BenchmarkSupport.cs](FSM_Benchmark/BenchmarkSupport.cs).
+
 ---
 
 # 🧭 What We Measure
@@ -105,21 +107,21 @@ The benchmark suite is organized around the actual architecture of FSM_API.
 
 The questions are intentionally different.
 
-| Area | Question |
-|---|---|
-| Definition creation | What does it cost to construct and register an FSM? |
-| Instance creation | What does one live FSMHandle cost to create? |
-| Handle update | What does one direct FSM instance update cost? |
-| TickAll | What does the scheduler core cost without the public wrapper? |
-| Interaction.Update | What does the normal public update boundary cost? |
-| Forced transition | What does an explicit state change cost? |
-| States | Does merely having more states increase tick cost? |
-| Transitions | How does transition cardinality affect a tick? |
-| Instances | How does one definition behave with many live instances? |
-| Definitions | How does one processing group behave with many definitions? |
-| Processing groups | Does registry size materially affect name lookup? |
-| String length | How does string-key size affect registry lookup? |
-| Allocation | How many bytes and GC events accompany each operation? |
+| Area | Benchmark | Question |
+|---|---|---|
+| Definition creation | [FSM_CreationBenchmarks.cs](FSM_Benchmark/FSM_CreationBenchmarks.cs) | What does it cost to construct and register an FSM? |
+| Instance creation | [FSM_CreationBenchmarks.cs](FSM_Benchmark/FSM_CreationBenchmarks.cs) | What does one live FSMHandle cost to create? |
+| Handle update | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does one direct FSM instance update cost? |
+| TickAll | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does the scheduler core cost without the public wrapper? |
+| Interaction.Update | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does the normal public update boundary cost? |
+| Forced transition | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does an explicit state change cost? |
+| States | [FSM_StateScalingBenchmarks.cs](FSM_Benchmark/FSM_StateScalingBenchmarks.cs) | Does merely having more states increase tick cost? |
+| Transitions | [FSM_TransitionScalingBenchmarks.cs](FSM_Benchmark/FSM_TransitionScalingBenchmarks.cs) | How does transition cardinality affect a tick? |
+| Instances | [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs) | How does one definition behave with many live instances? |
+| Definitions | [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs) | How does one processing group behave with many definitions? |
+| Processing groups | [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs) | Does registry size materially affect name lookup? |
+| String length | [FSM_LookupBenchmarks.cs](FSM_Benchmark/FSM_LookupBenchmarks.cs) | How does string-key size affect registry lookup? |
+| Allocation | All benchmark classes | How many bytes and GC events accompany each operation? |
 
 ---
 
@@ -127,7 +129,7 @@ The questions are intentionally different.
 
 ## 1. Execution Layers
 
-### FSM_ExecutionBenchmarks
+### [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs)
 
 This is the most important benchmark for understanding the original 305 ns result.
 
@@ -200,7 +202,7 @@ Comparing all three tells us where the overhead is coming from.
 
 # 2. Transition Scaling
 
-### FSM_TransitionScalingBenchmarks
+### [FSM_TransitionScalingBenchmarks.cs](FSM_Benchmark/FSM_TransitionScalingBenchmarks.cs)
 
 The benchmark varies:
 
@@ -236,7 +238,7 @@ This is an important benchmarking principle:
 
 # 3. State Scaling
 
-### FSM_StateScalingBenchmarks
+### [FSM_StateScalingBenchmarks.cs](FSM_Benchmark/FSM_StateScalingBenchmarks.cs)
 
 This varies:
 
@@ -260,7 +262,7 @@ If the result remains relatively flat, that tells us that state storage itself i
 
 # 4. Instance Scaling
 
-### FSM_InstanceScalingBenchmarks
+### [FSM_ScalingBenchmarks.cs — Instance scaling](FSM_Benchmark/FSM_ScalingBenchmarks.cs)
 
 This benchmark creates one definition and varies the number of live instances:
 
@@ -296,7 +298,7 @@ The definition should not be confused with the cost of its live manifestations.
 
 # 5. Definition Scaling
 
-### FSM_DefinitionScalingBenchmarks
+### [FSM_ScalingBenchmarks.cs — Definition scaling](FSM_Benchmark/FSM_ScalingBenchmarks.cs)
 
 This creates multiple FSM definitions in one processing group, with one instance per definition.
 
@@ -336,7 +338,7 @@ Even if both contain 500 live handles.
 
 # 6. Processing-Group Lookup Scaling
 
-### FSM_ProcessingGroupLookupScalingBenchmarks
+### [FSM_ScalingBenchmarks.cs — Processing-group lookup scaling](FSM_Benchmark/FSM_ScalingBenchmarks.cs)
 
 This varies the total number of independent processing groups:
 
@@ -367,7 +369,7 @@ This is useful because a data structure can scale well for lookup even while the
 
 # 7. String-Length Lookup
 
-### FSM_LookupBenchmarks
+### [FSM_LookupBenchmarks.cs](FSM_Benchmark/FSM_LookupBenchmarks.cs)
 
 The registry is string-keyed.
 
@@ -405,7 +407,7 @@ Therefore the benchmark is measuring lookup/hash/equality work, **not string con
 
 # 8. Definition Creation
 
-### FSM_DefinitionCreationBenchmarks
+### [FSM_CreationBenchmarks.cs — Definition creation](FSM_Benchmark/FSM_CreationBenchmarks.cs)
 
 This measures the actual fluent definition-building path:
 
@@ -437,7 +439,7 @@ The benchmark therefore isolates the operation as carefully as practical.
 
 # 9. Instance Creation
 
-### FSM_InstanceCreationBenchmarks
+### [FSM_CreationBenchmarks.cs — Instance creation](FSM_Benchmark/FSM_CreationBenchmarks.cs)
 
 The FSM definition already exists before the measured operation.
 
@@ -806,21 +808,15 @@ The two projects complement one another.
 ~~~text
 FSM_API_Benchmark
 │
-├── FSM_Benchmark
+├── [FSM_Benchmark](FSM_Benchmark/)
 │   │
-│   ├── BenchmarkSupport.cs
-│   │
-│   ├── FSM_ExecutionBenchmarks.cs
-│   │
-│   ├── FSM_CreationBenchmarks.cs
-│   │
-│   ├── FSM_ScalingBenchmarks.cs
-│   │
-│   ├── FSM_StateScalingBenchmarks.cs
-│   │
-│   ├── FSM_TransitionScalingBenchmarks.cs
-│   │
-│   └── FSM_LookupBenchmarks.cs
+│   ├── [BenchmarkSupport.cs](FSM_Benchmark/BenchmarkSupport.cs)
+│   ├── [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs)
+│   ├── [FSM_CreationBenchmarks.cs](FSM_Benchmark/FSM_CreationBenchmarks.cs)
+│   ├── [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs)
+│   ├── [FSM_StateScalingBenchmarks.cs](FSM_Benchmark/FSM_StateScalingBenchmarks.cs)
+│   ├── [FSM_TransitionScalingBenchmarks.cs](FSM_Benchmark/FSM_TransitionScalingBenchmarks.cs)
+│   └── [FSM_LookupBenchmarks.cs](FSM_Benchmark/FSM_LookupBenchmarks.cs)
 │
 ├── FSM_Benchmark.slnx
 ├── FSM_Benchmark/
