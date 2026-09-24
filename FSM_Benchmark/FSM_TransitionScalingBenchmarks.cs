@@ -26,7 +26,9 @@ namespace FSM_Benchmark
             BenchmarkSupport.Reset();
             _handle = BenchmarkSupport.BuildSingleHandle(
                 transitionCount: TransitionCount,
-                stateCount: 2,
+                // Keep the state population fixed and larger than the maximum
+                // transition count so transition cardinality is the changing variable.
+                stateCount: 502,
                 transitionsAlwaysFalse: true);
         }
 
