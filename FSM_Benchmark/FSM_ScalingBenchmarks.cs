@@ -49,6 +49,7 @@ namespace FSM_Benchmark
         {
             BenchmarkSupport.Reset();
             BenchmarkSupport.BuildDefinitions(DefinitionCount, 1);
+            FSM_API.Interaction.Update(BenchmarkSupport.Group);
         }
 
         [GlobalCleanup]
