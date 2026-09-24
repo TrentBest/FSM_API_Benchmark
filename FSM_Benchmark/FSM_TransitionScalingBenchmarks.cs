@@ -30,6 +30,7 @@ namespace FSM_Benchmark
                 // transition count so transition cardinality is the changing variable.
                 stateCount: 502,
                 transitionsAlwaysFalse: true);
+            _handle.Update(BenchmarkSupport.Group);
         }
 
         [GlobalCleanup]
