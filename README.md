@@ -111,16 +111,22 @@ The questions are intentionally different.
 |---|---|---|
 | Definition creation | [FSM_CreationBenchmarks.cs](FSM_Benchmark/FSM_CreationBenchmarks.cs) | What does it cost to construct and register an FSM? |
 | Instance creation | [FSM_CreationBenchmarks.cs](FSM_Benchmark/FSM_CreationBenchmarks.cs) | What does one live FSMHandle cost to create? |
-| Handle update | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does one direct FSM instance update cost? |
+| Handle execution | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does one direct FSM instance update cost? |
 | TickAll | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does the scheduler core cost without the public wrapper? |
 | Interaction.Update | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does the normal public update boundary cost? |
+| Handle surface | [FSM_HandleSurfaceBenchmarks.cs](FSM_Benchmark/FSM_HandleSurfaceBenchmarks.cs) | What do manual condition evaluation, reset, and property access cost? |
 | Forced transition | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does an explicit state change cost? |
 | States | [FSM_StateScalingBenchmarks.cs](FSM_Benchmark/FSM_StateScalingBenchmarks.cs) | Does merely having more states increase tick cost? |
 | Transitions | [FSM_TransitionScalingBenchmarks.cs](FSM_Benchmark/FSM_TransitionScalingBenchmarks.cs) | How does transition cardinality affect a tick? |
+| Add transition | [FSM_TransitionMutationBenchmarks.cs](FSM_Benchmark/FSM_TransitionMutationBenchmarks.cs) | What does adding a transition to an existing definition cost? |
 | Instances | [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs) | How does one definition behave with many live instances? |
 | Definitions | [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs) | How does one processing group behave with many definitions? |
 | Processing groups | [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs) | Does registry size materially affect name lookup? |
+| Public queries | [FSM_InteractionBenchmarks.cs](FSM_Benchmark/FSM_InteractionBenchmarks.cs) | What do Exists/GetDefinition/GetInstance/GetInstances/name enumeration cost? |
 | String length | [FSM_LookupBenchmarks.cs](FSM_Benchmark/FSM_LookupBenchmarks.cs) | How does string-key size affect registry lookup? |
+| Lifecycle mutation | [FSM_SurfaceLifecycleBenchmarks.cs](FSM_Benchmark/FSM_SurfaceLifecycleBenchmarks.cs) | What do adding/removing/destroying runtime structures cost? |
+| Error handling | [FSM_ErrorHandlingBenchmarks.cs](FSM_Benchmark/FSM_ErrorHandlingBenchmarks.cs) | What does resilient error reporting actually cost? |
+| Timers | [FSM_TimerBenchmarks.cs](FSM_Benchmark/FSM_TimerBenchmarks.cs) | What does the timer subsystem cost independently? |
 | Allocation | All benchmark classes | How many bytes and GC events accompany each operation? |
 
 ---
@@ -457,6 +463,249 @@ This answers:
 > **What does it cost to turn an existing blueprint into a live FSM instance?**
 
 Again, construction of the definition is deliberately outside the measured operation.
+
+---
+
+# 🧪 Measuring the Whole API Surface
+
+The benchmark lab is intentionally becoming **retentive**.
+
+We do not want to benchmark only the path that happens millions of times per second. We want a cost model for the operations a developer can actually choose to use.
+
+That includes three different kinds of cost:
+
+### 1. Steady-state cost
+
+These are the operations that may happen every update:
+
+- FSMHandle.Update
+- FSM_API.Interaction.Update
+- TickAll
+- transition evaluation
+- manual EvaluateConditions
+- instance/definition/group cardinality
+
+These should be run as conventional BenchmarkDotNet throughput benchmarks.
+
+### 2. Structural/lifecycle cost
+
+These are operations that change the shape of the FSM system:
+
+- create a processing group;
+- add a state;
+- add a transition;
+- remove a state;
+- remove a transition;
+- destroy an instance;
+- destroy a definition;
+- remove a processing group;
+- create a definition;
+- create an instance.
+
+These operations have side effects by design. The dedicated lifecycle benchmarks therefore rebuild the fixture before each measured invocation. They are intentionally treated as **operation-cost measurements**, not as ordinary steady-state nanobenchmarks.
+
+The important number for these operations is not merely "how many nanoseconds?" It is:
+
+> **What does choosing this abstraction or structural operation cost me?**
+
+### 3. Resilience and auxiliary subsystems
+
+FSM_API promises more than state transitions.
+
+It also provides:
+
+- cascading error handling;
+- instance and definition error counters;
+- explicit error reset/reporting;
+- public registry queries;
+- timers.
+
+Those are now measured independently.
+
+This matters for the eventual user-facing performance documentation. We should be able to say things such as:
+
+> "An ordinary steady-state update costs approximately X under workload Y."
+
+and separately:
+
+> "Adding structural complexity costs approximately Y."
+
+and:
+
+> "When your state logic throws and the cascading error system catches/reports it, the failure path costs approximately Z."
+
+Those are fundamentally different engineering facts.
+
+---
+
+# 🧭 From Benchmarks to a Cost Model
+
+The eventual goal is not a table of unrelated benchmark numbers.
+
+It is a **cost map**.
+
+For an operation with a variable dimension N, we want to understand:
+
+~~~text
+Cost(N)
+   │
+   ├── fixed cost
+   │
+   ├── marginal cost per additional item
+   │
+   └── allocation growth
+~~~
+
+For example, instance scaling should eventually let us estimate something like:
+
+~~~text
+UpdateCost(instances)
+    ≈ scheduler fixed cost
+    + instance marginal cost × instances
+~~~
+
+Likewise transition scaling can expose:
+
+~~~text
+TransitionCost(transitions)
+    ≈ state-step fixed cost
+    + transition evaluation marginal cost × transitions
+~~~
+
+We will **not** hard-code those equations into the benchmark project before the data exists.
+
+The benchmark results come first.
+
+Then we fit the simplest useful model to the measured data and verify that model against additional points.
+
+That distinction is important: the benchmark measures the implementation; the cost model interprets the measurements.
+
+---
+
+# 🧮 The Numbers We Ultimately Want
+
+For each variable dimension, the useful outputs are:
+
+| Measurement | Why we care |
+|---|---|
+| Mean time | Direct observed execution cost |
+| Median | Useful when distributions contain outliers |
+| Error / StdDev | Stability of the measurement |
+| Allocated bytes | Managed memory cost |
+| Gen0/Gen1/Gen2 | Garbage-collection pressure |
+| Scaling slope | Approximate marginal cost of another item |
+| Intercept | Approximate fixed cost of the path |
+| Breakpoints | Places where behavior changes shape |
+| Failure-path cost | What resilience costs when things go wrong |
+
+This gives us a much better vocabulary for the future FSM_API documentation.
+
+Instead of saying:
+
+> "FSM_API is fast."
+
+we can eventually say:
+
+> "Here is what the operation costs, here is how it scales, here is what it allocates, and here is when the cost changes."
+
+That is a much more useful promise.
+
+---
+
+# 💥 Error Handling Is Part of the Performance Contract
+
+The FSM_API documentation explicitly describes cascading degradation:
+
+1. user callbacks and transition conditions are protected by exception handling;
+2. errors are reported;
+3. repeated instance failures are counted;
+4. unstable instances can be removed;
+5. repeated definition failures can eventually destroy a definition;
+6. IStateContext.IsValid can cause an invalid instance to be unregistered.
+
+That machinery is deliberately **not** treated as free.
+
+FSM_ErrorHandlingBenchmarks.cs measures the explicit error subsystem, including:
+
+- instance error reporting;
+- definition error reporting;
+- internal API error reporting;
+- instance error dictionary access;
+- definition error dictionary access;
+- resetting one instance;
+- resetting one definition;
+- resetting all error state.
+
+The next refinement will be to benchmark the **actual thrown-user-callback path** separately from the explicit error-reporting methods.
+
+That distinction matters.
+
+~~~text
+Normal callback
+      │
+      └── no exception ─────────────── normal update cost
+
+Throwing callback
+      │
+      ├── exception construction
+      ├── catch
+      ├── error reporting
+      ├── error counting
+      └── threshold/degradation work
+~~~
+
+We want those pieces separated rather than collapsing them into one scary "exception cost" number.
+
+---
+
+# 🧱 Structural Cost vs. Runtime Cost
+
+This distinction is becoming a central principle of the lab.
+
+Adding a state is not the same kind of operation as updating a state.
+
+Adding an FSM definition is not the same kind of operation as ticking an FSM instance.
+
+Destroying a processing group is not the same kind of operation as looking one up.
+
+The benchmark project therefore intentionally measures both:
+
+~~~text
+BUILD / MUTATE
+      │
+      ├── definition
+      ├── state
+      ├── transition
+      ├── instance
+      └── group
+
+RUN
+      │
+      ├── handle
+      ├── scheduler
+      ├── transitions
+      └── scaling
+
+QUERY
+      │
+      ├── Exists
+      ├── GetDefinition
+      ├── GetInstance
+      ├── GetInstances
+      └── name enumeration
+
+FAIL
+      │
+      ├── instance error
+      ├── definition error
+      └── internal API error
+
+AUXILIARY
+      │
+      └── timers
+~~~
+
+That is much closer to the actual API contract than a single "FSM update benchmark."
 
 ---
 
@@ -816,6 +1065,12 @@ FSM_API_Benchmark
 │   ├── [FSM_ScalingBenchmarks.cs](FSM_Benchmark/FSM_ScalingBenchmarks.cs)
 │   ├── [FSM_StateScalingBenchmarks.cs](FSM_Benchmark/FSM_StateScalingBenchmarks.cs)
 │   ├── [FSM_TransitionScalingBenchmarks.cs](FSM_Benchmark/FSM_TransitionScalingBenchmarks.cs)
+│   ├── [FSM_TransitionMutationBenchmarks.cs](FSM_Benchmark/FSM_TransitionMutationBenchmarks.cs)
+│   ├── [FSM_SurfaceLifecycleBenchmarks.cs](FSM_Benchmark/FSM_SurfaceLifecycleBenchmarks.cs)
+│   ├── [FSM_HandleSurfaceBenchmarks.cs](FSM_Benchmark/FSM_HandleSurfaceBenchmarks.cs)
+│   ├── [FSM_InteractionBenchmarks.cs](FSM_Benchmark/FSM_InteractionBenchmarks.cs)
+│   ├── [FSM_ErrorHandlingBenchmarks.cs](FSM_Benchmark/FSM_ErrorHandlingBenchmarks.cs)
+│   ├── [FSM_TimerBenchmarks.cs](FSM_Benchmark/FSM_TimerBenchmarks.cs)
 │   └── [FSM_LookupBenchmarks.cs](FSM_Benchmark/FSM_LookupBenchmarks.cs)
 │
 ├── FSM_Benchmark.slnx
@@ -867,6 +1122,18 @@ FSM_API Benchmark Lab
 │   ├── Bucket lookup
 │   ├── Handle lookup
 │   └── String length
+│
+├── Error handling
+│   ├── Instance error reporting
+│   ├── Definition error reporting
+│   ├── Internal API error reporting
+│   └── Error counter maintenance
+│
+├── Timers
+│   ├── Add / set
+│   ├── Reset
+│   ├── Remove
+│   └── Update
 │
 └── Allocation
     ├── Definition creation
@@ -934,12 +1201,27 @@ The benchmark suite now covers the major runtime dimensions of the FSM_API:
 - [x] String-length lookup
 - [x] Definition creation
 - [x] Instance creation
+- [x] Public query surface
+- [x] Lifecycle mutation surface
+- [x] Handle manual-operation surface
+- [x] Error reporting and error-counter operations
+- [x] Timer subsystem
 - [x] Memory allocation diagnostics
 - [x] CPU diagnostics
 
-The next stage is not simply adding more benchmark methods.
+The suite is now broad enough that the next stage is **measurement, not speculation**.
 
-It is running these benchmarks on a controlled machine, examining the distributions, and using the results to identify where the actual cost centers are.
+Run the complete matrix on the controlled Windows development machine, save the human-readable BenchmarkDotNet output, and then build the first cost map:
+
+1. identify fixed costs;
+2. identify marginal costs;
+3. identify allocation growth;
+4. identify non-linear breakpoints;
+5. separate normal-path work from failure-path work;
+6. compare public abstractions against their lower-level diagnostic equivalents;
+7. turn the measured deltas into user-facing performance guidance.
+
+The .diagsession files from the earlier Visual Studio profiling runs are useful for diagnostics, but they are not the canonical benchmark-result format for this project. The canonical evidence should be the BenchmarkDotNet text/Markdown/CSV/JSON result for each run, accompanied by its environment.
 
 That is where benchmarking becomes an engineering instrument rather than a stopwatch.
 
