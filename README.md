@@ -112,6 +112,7 @@ The questions are intentionally different.
 | Definition creation | [FSM_CreationBenchmarks.cs](FSM_Benchmark/FSM_CreationBenchmarks.cs) | What does it cost to construct and register an FSM? |
 | Instance creation | [FSM_CreationBenchmarks.cs](FSM_Benchmark/FSM_CreationBenchmarks.cs) | What does one live FSMHandle cost to create? |
 | Handle execution | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does one direct FSM instance update cost? |
+| ProcessRate | [FSM_ProcessRateBenchmarks.cs](FSM_Benchmark/FSM_ProcessRateBenchmarks.cs) | How does scheduler throttling change the cost of an update call? |
 | TickAll | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does the scheduler core cost without the public wrapper? |
 | Interaction.Update | [FSM_ExecutionBenchmarks.cs](FSM_Benchmark/FSM_ExecutionBenchmarks.cs) | What does the normal public update boundary cost? |
 | Handle surface | [FSM_HandleSurfaceBenchmarks.cs](FSM_Benchmark/FSM_HandleSurfaceBenchmarks.cs) | What do manual condition evaluation, reset, and property access cost? |
@@ -1069,6 +1070,7 @@ FSM_API_Benchmark
 │   ├── [FSM_TransitionMutationBenchmarks.cs](FSM_Benchmark/FSM_TransitionMutationBenchmarks.cs)
 │   ├── [FSM_SurfaceLifecycleBenchmarks.cs](FSM_Benchmark/FSM_SurfaceLifecycleBenchmarks.cs)
 │   ├── [FSM_HandleSurfaceBenchmarks.cs](FSM_Benchmark/FSM_HandleSurfaceBenchmarks.cs)
+│   ├── [FSM_ProcessRateBenchmarks.cs](FSM_Benchmark/FSM_ProcessRateBenchmarks.cs)
 │   ├── [FSM_InteractionBenchmarks.cs](FSM_Benchmark/FSM_InteractionBenchmarks.cs)
 │   ├── [FSM_ErrorHandlingBenchmarks.cs](FSM_Benchmark/FSM_ErrorHandlingBenchmarks.cs)
 │   ├── [FSM_ThrownErrorExecutionBenchmarks.cs](FSM_Benchmark/FSM_ThrownErrorExecutionBenchmarks.cs)
@@ -1206,6 +1208,7 @@ The benchmark suite now covers the major runtime dimensions of the FSM_API:
 - [x] Public query surface
 - [x] Lifecycle mutation surface
 - [x] Handle manual-operation surface
+- [x] ProcessRate behavior
 - [x] Error reporting and error-counter operations
 - [x] Actual thrown-callback failure path
 - [x] Timer subsystem
