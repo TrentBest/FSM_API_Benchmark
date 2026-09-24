@@ -69,17 +69,6 @@ namespace FSM_Benchmark
         }
 
         [Benchmark]
-        public void AddTransition()
-        {
-            FSM_API.Interaction.AddTransition(
-                Fsm,
-                "State_A",
-                "State_B",
-                static _ => false,
-                Group);
-        }
-
-        [Benchmark]
         public void RemoveStateFromFSM()
         {
             FSM_API.Interaction.RemoveStateFromFSM(
