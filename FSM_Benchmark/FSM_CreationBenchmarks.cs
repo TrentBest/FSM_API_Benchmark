@@ -5,15 +5,15 @@ using TheSingularityWorkshop.FSM_API;
 namespace FSM_Benchmark
 {
     /// <summary>
-    /// Measures construction and registration costs separately from runtime ticking.
+    /// Measures definition construction and registration.
     ///
-    /// Iteration setup/cleanup resets the static FSM registry outside the measured
-    /// benchmark method so one iteration does not inherit thousands of definitions
-    /// from the previous iteration.
+    /// State count is the controlled variable. The benchmark includes the fluent
+    /// definition-building work and final BuildDefinition registration because
+    /// that is the actual API operation an application performs.
     /// </summary>
     [CPUUsageDiagnoser]
     [MemoryDiagnoser]
-    public class FSM_CreationBenchmarks
+    public class FSM_DefinitionCreationBenchmarks
     {
         [Params(1, 2, 10, 50)]
         public int StateCount { get; set; }
@@ -55,10 +55,21 @@ namespace FSM_Benchmark
 
             builder.BuildDefinition();
         }
+    }
 
-        [Benchmark]
-        public void CreateInstance()
+    /// <summary>
+    /// Measures the cost of creating a live FSMHandle after the definition already
+    /// exists. Definition construction is performed outside the timed method.
+    /// </summary>
+    [CPUUsageDiagnoser]
+    [MemoryDiagnoser]
+    public class FSM_InstanceCreationBenchmarks
+    {
+        [IterationSetup]
+        public void IterationSetup()
         {
+            BenchmarkSupport.Reset();
+
             FSM_API.Create.CreateFiniteStateMachine(
                     "InstanceBenchmark",
                     processRate: 1,
@@ -66,7 +77,17 @@ namespace FSM_Benchmark
                 .State("State_0", null, null, null)
                 .WithInitialState("State_0")
                 .BuildDefinition();
+        }
 
+        [IterationCleanup]
+        public void IterationCleanup()
+        {
+            BenchmarkSupport.Reset();
+        }
+
+        [Benchmark]
+        public void CreateInstance()
+        {
             FSM_API.Create.CreateInstance(
                 "InstanceBenchmark",
                 new BenchmarkSupport.DummyContext(),
