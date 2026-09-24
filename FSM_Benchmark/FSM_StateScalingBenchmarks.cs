@@ -26,6 +26,7 @@ namespace FSM_Benchmark
             _handle = BenchmarkSupport.BuildSingleHandle(
                 transitionCount: 0,
                 stateCount: StateCount);
+            _handle.Update(BenchmarkSupport.Group);
         }
 
         [GlobalCleanup]
