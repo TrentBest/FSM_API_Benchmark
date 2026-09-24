@@ -32,8 +32,8 @@ namespace FSM_Benchmark
             int stateCount = 2,
             bool transitionsAlwaysFalse = true)
         {
-            if (stateCount < 2)
-                stateCount = 2;
+            stateCount = Math.Max(stateCount, transitionCount + 1);
+            stateCount = Math.Max(stateCount, 2);
 
             var builder = FSM_API.Create.CreateFiniteStateMachine(
                 Fsm,
@@ -60,7 +60,7 @@ namespace FSM_Benchmark
             {
                 builder.Transition(
                     "State_0",
-                    "State_1",
+                    $"State_{i + 1}",
                     transitionsAlwaysFalse
                         ? static _ => false
                         : static ctx => ctx is DummyContext d && d.Counter < 0);
