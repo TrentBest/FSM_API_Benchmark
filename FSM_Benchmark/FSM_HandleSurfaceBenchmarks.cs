@@ -46,9 +46,9 @@ namespace FSM_Benchmark
         }
 
         [Benchmark]
-        public bool EvaluateConditions()
+        public void EvaluateConditions()
         {
-            return _handle.EvaluateConditions();
+            _handle.EvaluateConditions();
         }
 
         [Benchmark]
