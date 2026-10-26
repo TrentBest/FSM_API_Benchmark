@@ -70,6 +70,16 @@ A fixture audit of `FSM_ErrorHandlingBenchmarks` also found that iteration setup
 
 The source-built benchmark lane must use a pinned commit of the active 2.0 source and a fully identified integer-native implementation. A branch name or the presence of an integer-keyed registry alone is not evidence that the measured execution path is integer-backed. Keep package-based 1.x baselines separate, and never publish a package merely to make the benchmark compile.
 
+## Current integer-runtime implementation: benchmark-specific risks
+
+The active `feature/fsm-api-2.0` branch does contain a distinct `FSM_API/IntegerBacked` implementation; this is the correct source family to evaluate, rather than the older diverged prototype described above. Relevant files include `FSM.cs`, `FSMState.cs`, `FSMTransition.cs`, `FSMHandleInt.cs`, `FSMBuilderInt.cs`, and `FSMRuntime.cs`. The following are source-derived hypotheses that need measurements and parity tests, not conclusions about observed performance:
+
+- **Per-tick snapshot allocation:** `FSMRuntime.Update(int)` and `UpdateAll()` call `_handles.ToArray()` before iterating. Measure allocation bytes and latency as handle count grows (0, 1, 10, 50, 100, 1,000, and larger practical sizes), with both no-op and transition-capable FSMs. Preserve the intentional semantics that handles created during callbacks do not update until the next tick; any optimization must retain mutation safety.
+- **Dense-ID storage assumption:** integer state lookup uses an array indexed by state ID, and runtime definition/counter storage is capacity-sized by FSM ID. Measure dense sequential IDs against sparse/high IDs, recording capacity/memory and build-time resize cost. Do not compare a sparse-ID integer case to a string case with materially different state topology.
+- **Transition-list scans:** transition evaluation walks transition lists and checks source/target IDs. Vary transition count, source-state fan-out, Any-State transitions, and early/late/no-match positions. Integer identity does not eliminate linear transition scans by itself.
+- **Compatibility inheritance:** `FSMHandleInt` derives from `FSMHandle`; inspect the exact inherited members and call path to confirm that the hot path stays integer-only and does not allocate or resolve string state names. Benchmark the handle’s public surface as well as `FSMRuntime.Update`.
+- **Snapshot and mutation semantics:** test callback-driven handle creation/removal and definition registration/unregistration during a tick. Runtime performance improvements must preserve the existing deferred/next-tick eligibility contract and avoid collection-modification failures.
+
 ## Required scenario states
 
 For stateful operations, name the precondition and postcondition in the benchmark catalog. At minimum, cover:
