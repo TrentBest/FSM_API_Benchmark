@@ -62,6 +62,14 @@ The integer-backed implementation should benchmark this wrapper separately from 
 | Bridge / mixed mode | String call into integer runtime and reverse if supported | Native integer route | Make compatibility costs explicit |
 | Cold vs warm | First use and steady state | First use and steady state | Distinguish initialization/JIT/cache effects from recurring cost |
 
+## Implementation provenance and fixture audit
+
+The historical branch `feature/integer-backed-runtime` is **not** a drop-in integer-native implementation for the current 2.0 line. GitHub comparison reports it as diverged: 3 commits ahead and 93 behind `feature/fsm-api-2.0`. The comparison adds `FSM_API/IntegerBacked/FSMRegistry.cs`, which keys definitions and instance lists by integer IDs, but it reuses the existing `FSM` and `FSMHandle` types and does not establish an end-to-end integer-native state/transition execution path. Use it only as historical reference material. Do not treat it as the target implementation or merge it into the active branch without a separate review.
+
+A fixture audit of `FSM_ErrorHandlingBenchmarks` also found that iteration setup builds a clean handle/definition but does not seed error counts before the reset benchmarks. As currently written, `ResetInstanceErrorCount`, `ResetDefinitionErrorCount`, and `ResetAllErrors` therefore appear to measure empty-ledger/zero-count behavior, not clearing populated error state. Split these into explicitly named empty and populated cases; seed the populated state in setup outside the timed region and ensure thresholds cannot trigger destructive side effects during seeding. This is a source-level fixture concern, not a measured performance defect. Benchmark labels must state the precondition and expected postcondition.
+
+The source-built benchmark lane must use a pinned commit of the active 2.0 source and a fully identified integer-native implementation. A branch name or the presence of an integer-keyed registry alone is not evidence that the measured execution path is integer-backed. Keep package-based 1.x baselines separate, and never publish a package merely to make the benchmark compile.
+
 ## Required scenario states
 
 For stateful operations, name the precondition and postcondition in the benchmark catalog. At minimum, cover:
