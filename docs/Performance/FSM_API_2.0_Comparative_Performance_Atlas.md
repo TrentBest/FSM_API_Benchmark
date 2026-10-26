@@ -12,6 +12,24 @@ Make the engineering cost of moving from string-backed identity to integer-backe
 
 The historical `Interaction.Update` observation of approximately 305.1 ns / 360 B for one group is a **reference point only** until its exact source, runtime, hardware, and raw benchmark artifacts are verified. It is not a current measurement, an inherent floor, or proof that all of that cost is string processing.
 
+## High-priority hypotheses to isolate (not yet benchmark-confirmed)
+
+Source inspection of the current `feature/fsm-api-2.0` branch shows that the public `FsmApi.Interaction.Update(string)` wrapper creates a `Stopwatch` via `Stopwatch.StartNew()` on every call, invokes `Internal.TickAll(processingGroup)`, drains deferred modifications, and checks elapsed milliseconds against a warning threshold. The threshold failure path constructs a message and exception only when the threshold is exceeded.
+
+This is an immediate candidate for the performance atlas because it is wrapper overhead paid on every call and is independent of whether FSM/state identities are strings or integers. It is **not yet proof** that the stopwatch is the dominant part of the historical 305 ns or 360 B.
+
+Add matched measurements for:
+- Public `Update` wrapper, empty group / no handles.
+- Direct `TickAll` on the same group.
+- `TickAll` plus deferred-modification drain, with queue empty and with controlled queued work where supported.
+- A minimal isolated stopwatch start/stop baseline, clearly marked diagnostic rather than an exact subtractive attribution.
+- One, ten, and fifty groups/handles as appropriate, with allocation and disassembly evidence.
+- Warning-threshold branch disabled in ordinary steady state versus an intentionally triggered warning scenario.
+
+Interpret the difference cautiously: subtraction across microbenchmarks is an estimate, not a perfect decomposition, because JIT inlining, timer resolution, call structure, and benchmark harness behavior differ. If timing instrumentation itself is too costly for a per-frame path, investigate a lower-overhead threshold mechanism or an opt-in diagnostic mode only after tests prove the behavior contract and benchmark evidence shows a real win.
+
+The integer-backed implementation should benchmark this wrapper separately from the integer hot path. Do not credit integer backing for savings caused by changing timing instrumentation or scheduler architecture; report those as separate engineering changes.
+
 ## Comparison rules
 
 - Compare semantically equivalent work, not merely similarly named methods.
