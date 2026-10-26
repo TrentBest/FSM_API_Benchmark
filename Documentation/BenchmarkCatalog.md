@@ -45,7 +45,7 @@ A broader implementation exists on the open [PR #1 — Complete FSM_API benchmar
 | `FSMAPI.Interaction.GetDefinitionNames` | `FSM_InteractionBenchmarks.GetAllDefinitionNames` | Enumerate definition names | Proposed in PR #1; validate |
 | `FSMAPI.Lookup.PublicExists.StringLength` | `FSM_LookupBenchmarks.PublicExistsLookup` | Public lookup at name lengths 8/32/128/512 | Proposed in PR #1; validate |
 | `FSMAPI.Lookup.InternalBucket.StringLength` | `FSM_LookupBenchmarks.DirectBucketLookup` | Internal bucket lookup at name lengths 8/32/128/512 | Diagnostic/internal path |
-| `FSMAPI.Scheduler.ProcessRate.Update` | `FSM_ProcessRateBenchmarks.InteractionUpdate` | ProcessRate 0/1/2/5/10 | Proposed in PR #1; verify 0 semantics |
+| `FSMAPI.Scheduler.ProcessRate.Update` | `FSM_ProcessRateBenchmarks.InteractionUpdate` | ProcessRate 0/1/2/5/10 | Proposed in PR #1; validate fixture | `0` is documented to disable automatic stepping, so this is scheduler overhead for a non-auto-updating instance—not equivalent update work. Validate state/callback counts; consider `-1` as the separate every-tick case. |
 | `FSMAPI.Scaling.LiveInstances.Update` | `FSM_InstanceScalingBenchmarks.Update` | 1–1000 live instances | Proposed in PR #1; validate |
 | `FSMAPI.Scaling.Definitions.Update` | `FSM_DefinitionScalingBenchmarks.Update` | 1–500 definitions in a group | Proposed in PR #1; validate |
 | `FSMAPI.Lookup.ProcessingGroups.Exists` | `FSM_ProcessingGroupLookupScalingBenchmarks.Exists` | 1–1000 registered groups | Proposed in PR #1; validate |
