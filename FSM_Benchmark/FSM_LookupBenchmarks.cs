@@ -1,3 +1,4 @@
+#nullable enable
 using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using TheSingularityWorkshop.FSM_API;
