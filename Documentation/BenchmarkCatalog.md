@@ -45,7 +45,7 @@ A broader implementation exists on the open [PR #1 — Complete FSM_API benchmar
 | `FSMAPI.Interaction.GetDefinitionNames` | `FSM_InteractionBenchmarks.GetAllDefinitionNames` | Enumerate definition names | Proposed in PR #1; validate |
 | `FSMAPI.Lookup.PublicExists.StringLength` | `FSM_LookupBenchmarks.PublicExistsLookup` | Public lookup at name lengths 8/32/128/512 | Proposed in PR #1; validate |
 | `FSMAPI.Lookup.InternalBucket.StringLength` | `FSM_LookupBenchmarks.DirectBucketLookup` | Internal bucket lookup at name lengths 8/32/128/512 | Diagnostic/internal path |
-| `FSMAPI.Scheduler.ProcessRate.Update` | `FSM_ProcessRateBenchmarks.InteractionUpdate` | ProcessRate 0/1/2/5/10; `0` disables automatic stepping, so it measures scheduler overhead for a non-auto-updating instance rather than equivalent update work | Proposed in PR #1; validate state/callback counts and consider `-1` as a separate every-tick case |
+| `FSMAPI.Scheduler.ProcessRate.Update` | `FSM_ProcessRateBenchmarks.InteractionUpdate` | ProcessRate -1/0/1/2/5/10; `-1` runs every tick, `0` disables automatic stepping, and positive values run every N ticks | Proposed in PR #1; validate state/callback counts and report scheduler overhead separately from work performed |
 | `FSMAPI.Scaling.LiveInstances.Update` | `FSM_InstanceScalingBenchmarks.Update` | 1–1000 live instances | Proposed in PR #1; validate |
 | `FSMAPI.Scaling.Definitions.Update` | `FSM_DefinitionScalingBenchmarks.Update` | 1–500 definitions in a group | Proposed in PR #1; validate |
 | `FSMAPI.Lookup.ProcessingGroups.Exists` | `FSM_ProcessingGroupLookupScalingBenchmarks.Exists` | 1–1000 registered groups | Proposed in PR #1; validate |
@@ -102,6 +102,10 @@ The rows below are **uncovered planning entries**, not claims that the operation
 | `FSMAPI.Callback.GuardAction` | Guard/action delegate overhead | delegate shape, transition outcome | Measure | Uncovered |
 | `FSMAPI.Security.InvalidInput.Reject` | Reject invalid/boundary inputs | input category, input size | Measure cost without weakening validation | Uncovered |
 | `FSMAPI.Concurrency.ContendedOperation` | Supported concurrent access path | worker count, contention, operation | Only benchmark where the documented contract permits it | Blocked pending contract audit |
+
+## Automation inventory
+
+The repository's `development` branch contains `.github/workflows/sith-policy.yml`. This workflow evaluates the exact-two-branches policy and refreshes the Sith badge; it is **not** a benchmark build, execution, artifact, or regression-report workflow. Benchmark automation therefore remains unimplemented, and no benchmark CI result should be inferred from the presence of GitHub Actions.
 
 ## Measurement metadata
 
