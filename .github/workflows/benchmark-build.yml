@@ -7,6 +7,7 @@ on:
     paths:
       - "FSM_Benchmark/**"
       - ".github/workflows/benchmark-build.yml"
+      - "Documentation/BuildValidation.md"
   workflow_dispatch:
 
 permissions:
