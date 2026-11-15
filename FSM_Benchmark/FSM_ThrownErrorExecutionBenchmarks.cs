@@ -1,30 +1,41 @@
 using System;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
+using BenchmarkDotNet.Engines;
 using TheSingularityWorkshop.FSM_API;
 
 namespace FSM_Benchmark
 {
     /// <summary>
-    /// Compares the normal FSMHandle execution path with an actual user-callback
-    /// exception that is caught by FSM_API's resilience machinery.
+    /// Compares a normal update with an update whose user callback throws.
     ///
-    /// The exception object is created during setup so the benchmark primarily
-    /// measures the API's catch/report/count path rather than measuring exception
-    /// object construction.
+    /// Each measured invocation starts from a fresh API fixture and a fresh
+    /// exception object. One invocation per iteration prevents error-store growth
+    /// and exception reuse from changing the measured workload.
     /// </summary>
     [MemoryDiagnoser]
+    [SimpleJob(RunStrategy.Throughput, launchCount: 1, warmupCount: 5, iterationCount: 15, invocationCount: 1)]
     public class FSM_ThrownErrorExecutionBenchmarks
     {
-        private const string NormalGroup = "NormalErrorGroup";
-        private const string ThrowingGroup = "ThrowingErrorGroup";
+        private const string Group = "ErrorExecutionGroup";
+        private const string Fsm = "ErrorExecutionFSM";
 
-        private FSMHandle _normalHandle = null!;
-        private FSMHandle _throwingHandle = null!;
+        private FSMHandle _handle = null!;
         private Exception _exception = null!;
 
-        [GlobalSetup]
-        public void Setup()
+        [IterationSetup(Target = nameof(NormalUpdate))]
+        public void SetupNormalUpdate()
+        {
+            SetupFixture(throwFromCallback: false);
+        }
+
+        [IterationSetup(Target = nameof(ThrowingUpdate))]
+        public void SetupThrowingUpdate()
+        {
+            SetupFixture(throwFromCallback: true);
+        }
+
+        private void SetupFixture(bool throwFromCallback)
         {
             BenchmarkSupport.Reset();
 
@@ -33,11 +44,22 @@ namespace FSM_Benchmark
 
             _exception = new InvalidOperationException("Benchmark callback failure");
 
-            FSM_API.Create.CreateFiniteStateMachine(
-                    "NormalErrorFSM",
-                    processRate: 1,
-                    processingGroup: NormalGroup)
-                .State(
+            var builder = FSM_API.Create.CreateFiniteStateMachine(
+                Fsm,
+                processRate: 1,
+                processingGroup: Group);
+
+            if (throwFromCallback)
+            {
+                builder.State(
+                    "State_0",
+                    null,
+                    _ => throw _exception,
+                    null);
+            }
+            else
+            {
+                builder.State(
                     "State_0",
                     null,
                     static ctx =>
@@ -45,37 +67,18 @@ namespace FSM_Benchmark
                         if (ctx is BenchmarkSupport.DummyContext d)
                             d.Counter++;
                     },
-                    null)
-                .WithInitialState("State_0")
-                .BuildDefinition();
+                    null);
+            }
 
-            FSM_API.Create.CreateFiniteStateMachine(
-                    "ThrowingErrorFSM",
-                    processRate: 1,
-                    processingGroup: ThrowingGroup)
-                .State(
-                    "State_0",
-                    null,
-                    ctx => throw _exception,
-                    null)
-                .WithInitialState("State_0")
-                .BuildDefinition();
+            builder.WithInitialState("State_0").BuildDefinition();
 
-            _normalHandle = FSM_API.Create.CreateInstance(
-                "NormalErrorFSM",
+            _handle = FSM_API.Create.CreateInstance(
+                Fsm,
                 new BenchmarkSupport.DummyContext(),
-                NormalGroup);
-
-            _throwingHandle = FSM_API.Create.CreateInstance(
-                "ThrowingErrorFSM",
-                new BenchmarkSupport.DummyContext(),
-                ThrowingGroup);
-
-            _normalHandle.Update(NormalGroup);
-            _throwingHandle.Update(ThrowingGroup);
+                Group);
         }
 
-        [GlobalCleanup]
+        [IterationCleanup]
         public void Cleanup()
         {
             BenchmarkSupport.Reset();
@@ -86,13 +89,13 @@ namespace FSM_Benchmark
         [Benchmark(Baseline = true)]
         public void NormalUpdate()
         {
-            _normalHandle.Update(NormalGroup);
+            _handle.Update(Group);
         }
 
         [Benchmark]
         public void ThrowingUpdate()
         {
-            _throwingHandle.Update(ThrowingGroup);
+            _handle.Update(Group);
         }
     }
 }
