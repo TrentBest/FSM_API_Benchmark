@@ -39,6 +39,14 @@ namespace FSM_Benchmark
             _handle.Update(Group);
         }
 
+        [IterationSetup(Target = nameof(ResetFSMInstance))]
+        public void SetupResetFSMInstance()
+        {
+            // Reset must begin from a non-initial state. Otherwise the benchmark
+            // measures a forced State_0 -> State_0 transition, not a reset.
+            _handle.TransitionTo("State_1");
+        }
+
         [GlobalCleanup]
         public void Cleanup()
         {
