@@ -1,4 +1,5 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Engines;
 using Microsoft.VSDiagnostics;
 using TheSingularityWorkshop.FSM_API;
 
@@ -13,6 +14,7 @@ namespace FSM_Benchmark
     /// </summary>
     [CPUUsageDiagnoser]
     [MemoryDiagnoser]
+    [SimpleJob(RunStrategy.Throughput, launchCount: 1, warmupCount: 5, iterationCount: 15, invocationCount: 1)]
     public class FSM_DefinitionCreationBenchmarks
     {
         [Params(1, 2, 10, 50)]
@@ -63,6 +65,7 @@ namespace FSM_Benchmark
     /// </summary>
     [CPUUsageDiagnoser]
     [MemoryDiagnoser]
+    [SimpleJob(RunStrategy.Throughput, launchCount: 1, warmupCount: 5, iterationCount: 15, invocationCount: 1)]
     public class FSM_InstanceCreationBenchmarks
     {
         [IterationSetup]
