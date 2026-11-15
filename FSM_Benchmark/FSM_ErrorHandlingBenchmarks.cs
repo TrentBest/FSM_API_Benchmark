@@ -46,6 +46,15 @@ namespace FSM_Benchmark
                 Group);
 
             _exception = new InvalidOperationException("Benchmark exception");
+
+            // Seed both tracked error stores so reset benchmarks measure clearing
+            // populated state rather than removing absent keys.
+            FSM_API.Error.InvokeInstanceError(
+                _handle,
+                "Seed instance error count",
+                _exception,
+                Group);
+            FSM_API.Error.InvokeDefinitionError(Fsm, Group);
         }
 
         [IterationCleanup]
@@ -71,7 +80,7 @@ namespace FSM_Benchmark
         {
             FSM_API.Error.InvokeDefinitionError(
                 Fsm,
-                "Benchmark definition error");
+                Group);
         }
 
         [Benchmark]
