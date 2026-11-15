@@ -1,0 +1,43 @@
+name: Benchmark Build
+
+on:
+  push:
+    branches:
+      - benchmark-complete
+  pull_request:
+    branches:
+      - development
+    paths:
+      - "FSM_Benchmark/**"
+      - ".github/workflows/benchmark-build.yml"
+      - "Documentation/BuildValidation.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build benchmark suite (.NET 8)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up .NET 8 SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Show SDK
+        run: dotnet --info
+
+      - name: Restore
+        run: dotnet restore FSM_Benchmark/FSM_Benchmark.csproj
+
+      - name: Build Release
+        run: dotnet build FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-restore
