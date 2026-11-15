@@ -1,6 +1,9 @@
 name: Benchmark Build
 
 on:
+  push:
+    branches:
+      - benchmark-complete
   pull_request:
     branches:
       - development
