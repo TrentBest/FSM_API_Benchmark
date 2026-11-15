@@ -56,15 +56,15 @@ This benchmark suite exists to measure those dimensions separately.
 
 # 🔬 Why This Project Exists
 
-The first useful benchmark for FSM_API measured a single public update path and produced a surprisingly small result:
+An earlier exploratory benchmark recorded the following public update-path results:
 
 - **1 active process group:** 305.1 ns / 360 B
 - **10 active process groups:** 3,115.7 ns / 3,600 B
 - **50 active process groups:** 15,736.6 ns / 18,000 B
 
-Those numbers were valuable because they showed that the update machinery was fast and scaled approximately linearly in that particular scenario.
+These values are retained as historical reference data only. Their full run provenance and environment have not yet been verified, and the earlier measurements may have been affected by an attached debugger. They are **not** the current performance baseline, must not be used as regression thresholds, and should not be presented as validated performance claims. A clean, reproducible BenchmarkDotNet run must establish the baseline.
 
-But they also exposed the next question.
+They still motivate the next question.
 
 **What is inside that number?**
 
@@ -94,6 +94,10 @@ In the current FSM_API implementation, the public update path:
 So the historical **305 ns** result should be understood as a measurement of a complete update scenario, not as the intrinsic cost of one string operation.
 
 This project now decomposes that machinery.
+
+## Measurement isolation
+
+Benchmarks that mutate global FSM state or consume a one-shot fixture use one measured invocation per iteration. The fixture is rebuilt or reset in iteration setup, outside the timed operation, so definition creation, instance creation, error resets, timer mutations, and lifecycle changes measure the intended operation against a known starting state. Steady-state benchmarks use reusable fixtures only where repeated calls preserve the same workload semantics.
 
 The important architectural boundary is that authoring cost and runtime cost do not have to be the same thing. FSM_API is intended to remain useful as a lightweight public library. More aggressive optimization belongs where measured workload justifies it.
 
