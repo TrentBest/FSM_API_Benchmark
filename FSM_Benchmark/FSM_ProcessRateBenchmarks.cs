@@ -11,7 +11,7 @@ namespace FSM_Benchmark
     [MemoryDiagnoser]
     public class FSM_ProcessRateBenchmarks
     {
-        [Params(0, 1, 2, 5, 10)]
+        [Params(-1, 0, 1, 2, 5, 10)]
         public int ProcessRate { get; set; }
 
         private FSMHandle _handle = null!;
