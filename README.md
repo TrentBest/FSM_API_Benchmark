@@ -140,8 +140,10 @@ This benchmark suite now has a source file for each major measurement dimension.
 
 This benchmark isolates the runtime price of expressing the same small state machine in three forms:
 
-- handwritten `if/else`;
-- handwritten `switch`;
+- handwritten integer/enum-style `if/else`;
+- handwritten integer/enum-style `switch`;
+- handwritten string-state `if/else`;
+- handwritten string-state `switch`;
 - `FSM_API` using a live `FSMHandle`.
 
 Each implementation starts in state 0 and performs the same operation per invocation:
@@ -150,7 +152,7 @@ Each implementation starts in state 0 and performs the same operation per invoca
 2. evaluate the same `TransitionRequested` boolean;
 3. when requested, execute the current state's exit action (increment an exit counter) and move to the other state.
 
-The `TransitionRequested` parameter runs both the no-transition path and the transition-every-update path. The handwritten implementations use an integer state discriminator; FSM_API uses its normal named states and transition definitions. This intentionally exposes the cost of the abstraction—including state representation, transition traversal, delegate dispatch, and the handle's guarded update path—rather than disguising those costs.
+The `TransitionRequested` parameter runs both the no-transition path and the transition-every-update path. The suite includes both integer/enum-style and string-backed handwritten state representations. FSM_API uses its normal named states and transition definitions. This exposes two useful comparisons: the minimum-cost compact representation, and handwritten code that already pays for string state names. The remaining difference includes transition traversal, delegate dispatch, and the handle's guarded update path.
 
 Machine definition and instance construction happen in global setup and are not timed. The benchmark does not include authoring time, code size, maintainability, scheduler dispatch, error handling, or the broader lifecycle surface. It is a deliberately narrow runtime comparison, not a claim that a two-branch handwritten machine is equivalent to every capability of FSM_API.
 
