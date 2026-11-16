@@ -133,6 +133,29 @@ This benchmark suite now has a source file for each major measurement dimension.
 
 ---
 
+
+## Abstraction overhead: handwritten logic versus FSM_API
+
+### [FSM_AbstractionOverheadBenchmarks.cs](FSM_Benchmark/FSM_AbstractionOverheadBenchmarks.cs)
+
+This benchmark isolates the runtime price of expressing the same small state machine in three forms:
+
+- handwritten `if/else`;
+- handwritten `switch`;
+- `FSM_API` using a live `FSMHandle`.
+
+Each implementation starts in state 0 and performs the same operation per invocation:
+
+1. execute the current state's update action (increment an update counter);
+2. evaluate the same `TransitionRequested` boolean;
+3. when requested, execute the current state's exit action (increment an exit counter) and move to the other state.
+
+The `TransitionRequested` parameter runs both the no-transition path and the transition-every-update path. The handwritten implementations use an integer state discriminator; FSM_API uses its normal named states and transition definitions. This intentionally exposes the cost of the abstraction—including state representation, transition traversal, delegate dispatch, and the handle's guarded update path—rather than disguising those costs.
+
+Machine definition and instance construction happen in global setup and are not timed. The benchmark does not include authoring time, code size, maintainability, scheduler dispatch, error handling, or the broader lifecycle surface. It is a deliberately narrow runtime comparison, not a claim that a two-branch handwritten machine is equivalent to every capability of FSM_API.
+
+Interpretation must remain honest: the handwritten versions are expected to have less runtime machinery. The purpose is to quantify that difference, then compare it with the cost and complexity of repeatedly implementing the same infrastructure by hand. Follow-on scenarios should add representative production patterns—more states, multiple conditional transitions, context-heavy decisions, timers, lifecycle callbacks, and multiple independent machines—without mixing those dimensions into this first baseline.
+
 # 🧭 What We Measure
 
 The benchmark suite is organized around the actual architecture of FSM_API.
