@@ -28,6 +28,12 @@ namespace FSM_Benchmark
         private int _switchState;
         private int _switchUpdates;
         private int _switchExits;
+        private string _ifStringState = "State_0";
+        private int _ifStringUpdates;
+        private int _ifStringExits;
+        private string _switchStringState = "State_0";
+        private int _switchStringUpdates;
+        private int _switchStringExits;
 
         private sealed class AbstractionContext : IStateContext
         {
@@ -79,6 +85,12 @@ namespace FSM_Benchmark
             _switchState = 0;
             _switchUpdates = 0;
             _switchExits = 0;
+            _ifStringState = "State_0";
+            _ifStringUpdates = 0;
+            _ifStringExits = 0;
+            _switchStringState = "State_0";
+            _switchStringUpdates = 0;
+            _switchStringExits = 0;
         }
 
         [GlobalCleanup]
@@ -127,6 +139,55 @@ namespace FSM_Benchmark
                     {
                         _switchExits++;
                         _switchState = 0;
+                    }
+                    break;
+            }
+        }
+
+
+        [Benchmark]
+        public void IfElseString()
+        {
+            if (_ifStringState == "State_0")
+            {
+                _ifStringUpdates++;
+                if (TransitionRequested)
+                {
+                    _ifStringExits++;
+                    _ifStringState = "State_1";
+                }
+            }
+            else
+            {
+                _ifStringUpdates++;
+                if (TransitionRequested)
+                {
+                    _ifStringExits++;
+                    _ifStringState = "State_0";
+                }
+            }
+        }
+
+        [Benchmark]
+        public void SwitchString()
+        {
+            switch (_switchStringState)
+            {
+                case "State_0":
+                    _switchStringUpdates++;
+                    if (TransitionRequested)
+                    {
+                        _switchStringExits++;
+                        _switchStringState = "State_1";
+                    }
+                    break;
+
+                default:
+                    _switchStringUpdates++;
+                    if (TransitionRequested)
+                    {
+                        _switchStringExits++;
+                        _switchStringState = "State_0";
                     }
                     break;
             }
