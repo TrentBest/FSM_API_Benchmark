@@ -9,6 +9,7 @@ on:
       - development
     paths:
       - "FSM_Benchmark/**"
+      - "global.json"
       - ".github/workflows/benchmark-build.yml"
       - "Documentation/BuildValidation.md"
   workflow_dispatch:
@@ -41,3 +42,6 @@ jobs:
 
       - name: Build Release
         run: dotnet build FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-restore
+
+      - name: Smoke-test abstraction overhead benchmarks
+        run: dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build -- --filter "*FSM_AbstractionOverheadBenchmarks*" --job Dry
