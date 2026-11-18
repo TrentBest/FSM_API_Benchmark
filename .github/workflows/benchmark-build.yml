@@ -23,16 +23,16 @@ concurrency:
 
 jobs:
   build:
-    name: Build benchmark suite (.NET 8)
+    name: Build benchmark suite (.NET 10)
     runs-on: ubuntu-24.04
     steps:
       - name: Check out source
         uses: actions/checkout@v6
 
-      - name: Set up .NET 8 SDK
+      - name: Set up .NET 10 SDK
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Show SDK
         run: dotnet --info
