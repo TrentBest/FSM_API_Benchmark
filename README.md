@@ -1506,7 +1506,7 @@ That is where benchmarking becomes an engineering instrument rather than a stopw
 
 This project currently targets:
 
-- **.NET 8**
+- **.NET 10**
 - **BenchmarkDotNet 0.15.2**
 - **Microsoft Visual Studio DiagnosticsHub BenchmarkDotNet Diagnosers**
 - **TheSingularityWorkshop.FSM_API 1.0.13**
