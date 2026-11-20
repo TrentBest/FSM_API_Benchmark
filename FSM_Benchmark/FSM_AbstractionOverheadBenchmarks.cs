@@ -151,7 +151,7 @@ namespace FSM_Benchmark
         public void Cleanup() => BenchmarkSupport.Reset();
 
         [Benchmark(Baseline = true)]
-        public void IfElse()
+        public int IfElse()
         {
             if (_ifState == 0)
             {
@@ -171,10 +171,11 @@ namespace FSM_Benchmark
                     _ifState = 0;
                 }
             }
+            return _ifUpdates + _ifExits + _ifState;
         }
 
         [Benchmark]
-        public void Switch()
+        public int Switch()
         {
             switch (_switchState)
             {
@@ -196,11 +197,12 @@ namespace FSM_Benchmark
                     }
                     break;
             }
+            return _switchUpdates + _switchExits + _switchState;
         }
 
 
         [Benchmark]
-        public void IfElseString()
+        public int IfElseString()
         {
             if (_ifStringState == "State_0")
             {
@@ -220,10 +222,11 @@ namespace FSM_Benchmark
                     _ifStringState = "State_0";
                 }
             }
+            return _ifStringUpdates + _ifStringExits + (_ifStringState == "State_0" ? 1 : 0);
         }
 
         [Benchmark]
-        public void SwitchString()
+        public int SwitchString()
         {
             switch (_switchStringState)
             {
@@ -245,12 +248,14 @@ namespace FSM_Benchmark
                     }
                     break;
             }
+            return _switchStringUpdates + _switchStringExits + (_switchStringState == "State_0" ? 1 : 0);
         }
 
         [Benchmark]
-        public void FSMApiHandleUpdate()
+        public int FSMApiHandleUpdate()
         {
             _apiHandle.Update(Group);
+            return _apiContext.Updates + _apiContext.Exits + (_apiHandle.CurrentState == "State_0" ? 1 : 0);
         }
     }
 }
