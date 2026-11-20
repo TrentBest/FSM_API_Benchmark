@@ -12,8 +12,8 @@ namespace FSM_Benchmark
     /// Definition/instance construction is deliberately outside the timed path.
     /// Each benchmark returns an observable checksum so the JIT cannot eliminate
     /// the handwritten state/counter mutations as dead code.
-    /// Each implementation increments an update counter, evaluates the same
-    /// transition-request flag, and increments an exit counter when transitioning.
+    /// Primitive controls measure the minimum direct-code path. Delegate controls
+    /// add callback/predicate dispatch for a closer comparison to FSM_API.
     /// </summary>
     [MemoryDiagnoser]
     public class FSM_AbstractionOverheadBenchmarks
@@ -32,6 +32,17 @@ namespace FSM_Benchmark
         private int _switchState;
         private int _switchUpdates;
         private int _switchExits;
+        private int _delegateIntState;
+        private int _delegateIntUpdates;
+        private int _delegateIntExits;
+        private int _delegateStringUpdates;
+        private int _delegateStringExits;
+        private string _delegateStringState = "State_0";
+        private Func<bool> _transitionPredicate = null!;
+        private Action _delegateIntUpdate = null!;
+        private Action _delegateIntExit = null!;
+        private Action _delegateStringUpdate = null!;
+        private Action _delegateStringExit = null!;
         private string _ifStringState = "State_0";
         private int _ifStringUpdates;
         private int _ifStringExits;
@@ -80,6 +91,11 @@ namespace FSM_Benchmark
 
             _apiContext = new AbstractionContext { TransitionRequested = TransitionRequested };
             _apiHandle = FSM_API.Create.CreateInstance(Definition, _apiContext, Group);
+            _transitionPredicate = () => TransitionRequested;
+            _delegateIntUpdate = () => _delegateIntUpdates++;
+            _delegateIntExit = () => _delegateIntExits++;
+            _delegateStringUpdate = () => _delegateStringUpdates++;
+            _delegateStringExit = () => _delegateStringExits++;
 
             ValidateEquivalentWorkAndReset();
 
@@ -89,6 +105,12 @@ namespace FSM_Benchmark
             _switchState = 0;
             _switchUpdates = 0;
             _switchExits = 0;
+            _delegateIntState = 0;
+            _delegateIntUpdates = 0;
+            _delegateIntExits = 0;
+            _delegateStringState = "State_0";
+            _delegateStringUpdates = 0;
+            _delegateStringExits = 0;
             _ifStringState = "State_0";
             _ifStringUpdates = 0;
             _ifStringExits = 0;
@@ -111,6 +133,10 @@ namespace FSM_Benchmark
             IfElseString();
             SwitchString();
             SwitchString();
+            ManualDelegateInt();
+            ManualDelegateInt();
+            ManualDelegateString();
+            ManualDelegateString();
             _apiHandle.Update(Group);
             _apiHandle.Update(Group);
 
@@ -118,10 +144,13 @@ namespace FSM_Benchmark
             bool equivalent =
                 _ifState == 0 && _switchState == 0 &&
                 _ifStringState == "State_0" && _switchStringState == "State_0" &&
+                _delegateIntState == 0 && _delegateStringState == "State_0" &&
                 _ifUpdates == 2 && _switchUpdates == 2 &&
                 _ifStringUpdates == 2 && _switchStringUpdates == 2 &&
+                _delegateIntUpdates == 2 && _delegateStringUpdates == 2 &&
                 _ifExits == expectedExits && _switchExits == expectedExits &&
                 _ifStringExits == expectedExits && _switchStringExits == expectedExits &&
+                _delegateIntExits == expectedExits && _delegateStringExits == expectedExits &&
                 _apiHandle.CurrentState == "State_0" &&
                 _apiContext.Updates == 2 && _apiContext.Exits == expectedExits;
 
@@ -251,6 +280,32 @@ namespace FSM_Benchmark
                     break;
             }
             return _switchStringUpdates + _switchStringExits + (_switchStringState == "State_0" ? 1 : 0);
+        }
+
+
+        [Benchmark]
+        public int ManualDelegateInt()
+        {
+            _delegateIntUpdate();
+            if (_transitionPredicate())
+            {
+                _delegateIntExit();
+                _delegateIntState = _delegateIntState == 0 ? 1 : 0;
+            }
+            return _delegateIntUpdates + _delegateIntExits + _delegateIntState;
+        }
+
+        [Benchmark]
+        public int ManualDelegateString()
+        {
+            _delegateStringUpdate();
+            if (_transitionPredicate())
+            {
+                _delegateStringExit();
+                _delegateStringState = _delegateStringState == "State_0" ? "State_1" : "State_0";
+            }
+            return _delegateStringUpdates + _delegateStringExits +
+                (_delegateStringState == "State_0" ? 1 : 0);
         }
 
         [Benchmark]
