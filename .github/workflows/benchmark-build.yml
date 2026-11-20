@@ -25,6 +25,7 @@ jobs:
   build:
     name: Build benchmark suite (.NET 10)
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -45,3 +46,18 @@ jobs:
 
       - name: Smoke-test abstraction overhead benchmarks
         run: dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build --framework net10.0 -- --filter "*FSM_AbstractionOverheadBenchmarks*" --job Dry
+
+      # A commit explicitly tagged [benchmark] opts into a real BenchmarkDotNet
+      # run. Ordinary pushes and PR validation remain fast smoke/build checks.
+      - name: Run calibrated abstraction overhead benchmarks
+        if: github.event_name == 'push' && contains(github.event.head_commit.message, '[benchmark]')
+        run: dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build --framework net10.0 -- --filter "*FSM_AbstractionOverheadBenchmarks*" --artifacts ./BenchmarkDotNet.Artifacts
+
+      - name: Upload BenchmarkDotNet results
+        if: always() && github.event_name == 'push' && contains(github.event.head_commit.message, '[benchmark]')
+        uses: actions/upload-artifact@v4
+        with:
+          name: abstraction-overhead-benchmark-${{ github.run_id }}
+          path: BenchmarkDotNet.Artifacts/
+          if-no-files-found: error
+          retention-days: 30
