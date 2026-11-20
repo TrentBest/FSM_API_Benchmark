@@ -10,6 +10,8 @@ namespace FSM_Benchmark
     /// implemented as if/else, switch, and FSM_API.
     ///
     /// Definition/instance construction is deliberately outside the timed path.
+    /// Each benchmark returns an observable checksum so the JIT cannot eliminate
+    /// the handwritten state/counter mutations as dead code.
     /// Each implementation increments an update counter, evaluates the same
     /// transition-request flag, and increments an exit counter when transitioning.
     /// </summary>
