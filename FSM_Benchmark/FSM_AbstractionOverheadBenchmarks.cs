@@ -22,6 +22,7 @@ namespace FSM_Benchmark
         public bool TransitionRequested { get; set; }
 
         private FSMHandle _apiHandle = null!;
+        private AbstractionContext _apiContext = null!;
         private int _ifState;
         private int _ifUpdates;
         private int _ifExits;
@@ -74,10 +75,10 @@ namespace FSM_Benchmark
                     context => ((AbstractionContext)context).TransitionRequested)
                 .BuildDefinition();
 
-            _apiHandle = FSM_API.Create.CreateInstance(
-                Definition,
-                new AbstractionContext { TransitionRequested = TransitionRequested },
-                Group);
+            _apiContext = new AbstractionContext { TransitionRequested = TransitionRequested };
+            _apiHandle = FSM_API.Create.CreateInstance(Definition, _apiContext, Group);
+
+            ValidateEquivalentWorkAndReset();
 
             _ifState = 0;
             _ifUpdates = 0;
@@ -91,6 +92,58 @@ namespace FSM_Benchmark
             _switchStringState = "State_0";
             _switchStringUpdates = 0;
             _switchStringExits = 0;
+        }
+
+        /// <summary>
+        /// Runs two known steps through every implementation before measurement.
+        /// Two steps guarantee the final state returns to State_0 in both modes.
+        /// </summary>
+        private void ValidateEquivalentWorkAndReset()
+        {
+            IfElse();
+            IfElse();
+            Switch();
+            Switch();
+            IfElseString();
+            IfElseString();
+            SwitchString();
+            SwitchString();
+            _apiHandle.Update(Group);
+            _apiHandle.Update(Group);
+
+            int expectedExits = TransitionRequested ? 2 : 0;
+            bool equivalent =
+                _ifState == 0 && _switchState == 0 &&
+                _ifStringState == "State_0" && _switchStringState == "State_0" &&
+                _ifUpdates == 2 && _switchUpdates == 2 &&
+                _ifStringUpdates == 2 && _switchStringUpdates == 2 &&
+                _ifExits == expectedExits && _switchExits == expectedExits &&
+                _ifStringExits == expectedExits && _switchStringExits == expectedExits &&
+                _apiHandle.CurrentState == "State_0" &&
+                _apiContext.Updates == 2 && _apiContext.Exits == expectedExits;
+
+            if (!equivalent)
+            {
+                throw new InvalidOperationException(
+                    "Abstraction benchmark implementations performed different work " +
+                    "(TransitionRequested=" + TransitionRequested + ").");
+            }
+
+            // Restore identical initial conditions before BenchmarkDotNet starts timing.
+            _ifState = 0;
+            _ifUpdates = 0;
+            _ifExits = 0;
+            _switchState = 0;
+            _switchUpdates = 0;
+            _switchExits = 0;
+            _ifStringState = "State_0";
+            _ifStringUpdates = 0;
+            _ifStringExits = 0;
+            _switchStringState = "State_0";
+            _switchStringUpdates = 0;
+            _switchStringExits = 0;
+            _apiContext.Updates = 0;
+            _apiContext.Exits = 0;
         }
 
         [GlobalCleanup]
