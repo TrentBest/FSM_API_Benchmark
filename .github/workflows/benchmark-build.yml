@@ -23,6 +23,10 @@ on:
 permissions:
   contents: read
 
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: true
+
 concurrency:
   group: benchmark-build-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
