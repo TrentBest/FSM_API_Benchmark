@@ -29,14 +29,14 @@ namespace FSM_Benchmark_2_0
         [Params(1, 10, 50)]
         public int InstancesPerDefinition { get; set; }
 
-                private readonly List<BenchmarkContext> _stringContexts = new List<BenchmarkContext>();
+        private readonly List<BenchmarkContext> _stringContexts = new List<BenchmarkContext>();
         private readonly List<BenchmarkContext> _integerContexts = new List<BenchmarkContext>();
 
         [GlobalSetup]
         public void Setup()
         {
             StringApi.Internal.ResetAPI(hardReset: true);
-            ClearIntegerDefinitions();
+            BenchmarkRuntimeCleanup.ClearIntegerDefinitions();
             _stringContexts.Clear();
             _integerContexts.Clear();
 
@@ -220,6 +220,19 @@ namespace FSM_Benchmark_2_0
         public bool IntegerBackedLookupHit()
         {
             return IntegerApi.Interaction.Contains(_targetID);
+        }
+    }
+
+    internal static class BenchmarkRuntimeCleanup
+    {
+        public static void ClearIntegerDefinitions()
+        {
+            // The public integer facade owns a process-wide runtime. Clear the full
+            // parameter range so smaller cases cannot inherit definitions from a prior case.
+            for (var definitionID = 0; definitionID < 50; definitionID++)
+            {
+                IntegerApi.Interaction.Unregister(definitionID);
+            }
         }
     }
 }
