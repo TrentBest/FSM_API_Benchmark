@@ -6,6 +6,8 @@
 
 **The Singularity Workshop — measuring FSM_API instead of guessing about it.**
 
+**FSM_API 2.0:** Start with the [representation benchmark methodology](FSM_API_2_0_BENCHMARKS.md) and the [method-level coverage ledger](FSM_API_2_0_METHOD_COVERAGE.md). The 2.0 benchmark lane compiles directly against the FSM_API `development` source and archives a reflection-generated public API inventory plus calibrated BenchmarkDotNet artifacts.
+
 This repository is the performance laboratory for
 [TheSingularityWorkshop.FSM_API](https://github.com/TrentBest/FSM_API).
 
