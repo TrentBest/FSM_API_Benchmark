@@ -6,6 +6,8 @@ on:
     paths:
       - "FSM_Benchmark/**"
       - "FSM_Benchmark_2_0/**"
+      - "FSM_API_2_0_BENCHMARKS.md"
+      - "FSM_API_2_0_METHOD_COVERAGE.md"
       - "FSM_Benchmark.slnx"
       - ".github/workflows/fsm-api-2.0-benchmarks.yml"
   pull_request:
@@ -13,22 +15,39 @@ on:
     paths:
       - "FSM_Benchmark/**"
       - "FSM_Benchmark_2_0/**"
+      - "FSM_API_2_0_BENCHMARKS.md"
+      - "FSM_API_2_0_METHOD_COVERAGE.md"
       - "FSM_Benchmark.slnx"
       - ".github/workflows/fsm-api-2.0-benchmarks.yml"
   workflow_dispatch:
+    inputs:
+      run_calibrated_benchmarks:
+        description: "Run full BenchmarkDotNet measurements and upload raw results"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: true
+
+concurrency:
+  group: fsm-api-benchmarks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   benchmark-smoke:
-    # The existing 1.x suite includes the Visual Studio CPU diagnoser.
+    name: Build and smoke-test (.NET 10)
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - name: Check out benchmark repository
         uses: actions/checkout@v4
 
-      - name: Check out FSM_API 2.0 development source
+      - name: Check out FSM_API development source
         uses: actions/checkout@v4
         with:
           repository: TrentBest/FSM_API
@@ -39,6 +58,17 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+
+      - name: Record benchmark provenance
+        shell: pwsh
+        run: |
+          "BenchmarkRepository=$env:GITHUB_REPOSITORY" | Out-File -FilePath benchmark-provenance.txt
+          "BenchmarkCommit=$env:GITHUB_SHA" | Out-File -FilePath benchmark-provenance.txt -Append
+          "FsmApiCommit=$(git -C FSM_API rev-parse HEAD)" | Out-File -FilePath benchmark-provenance.txt -Append
+          "RunnerOS=$env:RUNNER_OS" | Out-File -FilePath benchmark-provenance.txt -Append
+          "RunnerImage=$env:ImageOS" | Out-File -FilePath benchmark-provenance.txt -Append
+          dotnet --info | Out-File -FilePath benchmark-provenance.txt -Append
+          Get-CimInstance Win32_Processor | Select-Object -ExpandProperty Name | Out-File -FilePath benchmark-provenance.txt -Append
 
       - name: Restore benchmark solution
         run: dotnet restore FSM_Benchmark.slnx
@@ -51,3 +81,65 @@ jobs:
 
       - name: Run FSM_API 2.0 representation smoke tests
         run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --job Dry
+
+      - name: Upload build and smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsm-api-benchmark-smoke-${{ github.run_id }}
+          path: benchmark-provenance.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  calibrated-benchmarks:
+    name: Calibrated FSM_API 2.0 benchmarks
+    needs: benchmark-smoke
+    if: (github.event_name == 'push' && contains(github.event.head_commit.message, '[benchmark]')) || (github.event_name == 'workflow_dispatch' && inputs.run_calibrated_benchmarks)
+    runs-on: windows-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out benchmark repository
+        uses: actions/checkout@v4
+
+      - name: Check out FSM_API development source
+        uses: actions/checkout@v4
+        with:
+          repository: TrentBest/FSM_API
+          ref: development
+          path: FSM_API
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Record exact source and machine provenance
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path BenchmarkDotNet.Artifacts | Out-Null
+          "BenchmarkRepository=$env:GITHUB_REPOSITORY" | Out-File BenchmarkDotNet.Artifacts/provenance.txt
+          "BenchmarkCommit=$env:GITHUB_SHA" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          "FsmApiRepository=TrentBest/FSM_API" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          "FsmApiCommit=$(git -C FSM_API rev-parse HEAD)" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          "RunnerOS=$env:RUNNER_OS" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          "RunnerImage=$env:ImageOS" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          dotnet --info | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          Get-CimInstance Win32_Processor | Select-Object -ExpandProperty Name | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty NumberOfLogicalProcessors | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+
+      - name: Restore and build benchmark project
+        run: |
+          dotnet restore FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj
+          dotnet build FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-restore
+
+      - name: Run full FSM_API 2.0 BenchmarkDotNet matrix
+        run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --exporters GitHub,Markdown,Csv,Json --artifacts BenchmarkDotNet.Artifacts
+
+      - name: Upload raw BenchmarkDotNet results and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fsm-api-2.0-calibrated-${{ github.run_id }}-${{ github.sha }}
+          path: BenchmarkDotNet.Artifacts/
+          if-no-files-found: error
+          retention-days: 90
