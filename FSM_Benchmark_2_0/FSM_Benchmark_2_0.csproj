@@ -7,6 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
-    <ProjectReference Include="../FSM_API/FSM_API.csproj" />
+    <ProjectReference Include="../FSM_API/FSM_API/FSM_API.csproj" />
   </ItemGroup>
 </Project>
