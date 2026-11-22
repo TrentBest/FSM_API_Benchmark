@@ -55,9 +55,9 @@ The machine-readable inventory, including declaring type, surface type, signatur
 | Integer runtime | `Register`, `Contains`, `GetDefinition`, `CreateInstance`, `RemoveInstance`, `GetInstances`, `Unregister`, `Update`, `UpdateAll`, `GetHandleCount`, error-count snapshots/resets | Direct runtime operation benchmarks; snapshots include allocation cost | Not benchmarked independently |
 | Integer builder | Constructor; `State`, `WithProcessRate`, `WithProcessingGroup`, `WithInitialState`, `Transition`, `AnyTransition`, `BuildDefinition` | Builder microbenchmarks by states/transitions; validation and duplicate-ID contract tests | Not benchmarked |
 | Integer handle | Constructor; `Initialize`, `Update`, `EvaluateConditions`, `TransitionTo`, `ResetFSMInstance` | Direct handle update, transition evaluation, forced transition, reset, lifecycle callback scenarios | Not benchmarked |
-| Integer FSM / state / transition / compiler / timers / utilities | Every public constructor, method, property and conversion entry point in `IntegerBacked` types | Definition operations, state/transition lookup and mutation, timer paths, compile/decompile, utility calls | Inventory pending reflection pass |
+| Integer FSM / state / transition / compiler / timers / utilities | Every public constructor, method, property and conversion entry point in `IntegerBacked` types | Definition operations, state/transition lookup and mutation, timer paths, compile/decompile, utility calls | Automated inventory generated; per-method benchmark mapping remains |
 | String-backed public model | `FSM`, `FSMBuilder`, `FSMHandle`, `FSMState`, `FSMTransition`, timers, context contracts and public facade members | Paired equivalents where semantics match; string-only behavior gets its own benchmark/contract case | Existing 1.x suite has broad coverage; 2.0 paired map pending |
-| Diagnostics and support | Public metrics, context types, events, and exposed diagnostic helpers | Diagnostic cost only where consumer-relevant; otherwise contract coverage | Inventory pending reflection pass |
+| Diagnostics and support | Public metrics, context types, events, and exposed diagnostic helpers | Diagnostic cost only where consumer-relevant; otherwise contract coverage | Automated inventory generated; consumer relevance review remains |
 
 ## Current executable benchmark cases
 
