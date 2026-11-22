@@ -27,7 +27,8 @@ namespace FSM_Benchmark_2_0
                     Kind = "Constructor",
                     Name = c.Name,
                     Signature = c.ToString(),
-                    Disposition = "UNCLASSIFIED"
+                    Disposition = Classify(t, "Constructor", c.Name),
+                    CoverageStatus = Coverage(t, "Constructor", c.Name)
                 });
                 var methods = t.GetMethods(flags)
                     .Where(m => !m.IsSpecialName && m.DeclaringType != typeof(object))
@@ -38,7 +39,8 @@ namespace FSM_Benchmark_2_0
                         Kind = "Method",
                         Name = m.Name,
                         Signature = m.ToString(),
-                        Disposition = "UNCLASSIFIED"
+                        Disposition = Classify(t, "Method", m.Name),
+                        CoverageStatus = Coverage(t, "Method", m.Name)
                     });
                 var properties = t.GetProperties(flags).Select(p => new
                 {
@@ -47,7 +49,8 @@ namespace FSM_Benchmark_2_0
                     Kind = "Property",
                     Name = p.Name,
                     Signature = p.ToString(),
-                    Disposition = "UNCLASSIFIED"
+                    Disposition = Classify(t, "Property", p.Name),
+                    CoverageStatus = Coverage(t, "Property", p.Name)
                 });
                 var events = t.GetEvents(flags).Select(e => new
                 {
@@ -56,7 +59,8 @@ namespace FSM_Benchmark_2_0
                     Kind = "Event",
                     Name = e.Name,
                     Signature = e.ToString(),
-                    Disposition = "UNCLASSIFIED"
+                    Disposition = Classify(t, "Event", e.Name),
+                    CoverageStatus = Coverage(t, "Event", e.Name)
                 });
                 return constructors.Cast<object>().Concat(methods).Concat(properties).Concat(events);
             }).ToArray();
@@ -74,7 +78,49 @@ namespace FSM_Benchmark_2_0
             var fullPath = Path.GetFullPath(outputPath);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? ".");
             File.WriteAllText(fullPath, JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true }));
-            Console.WriteLine("Wrote " + members.Length + " public API inventory entries to " + fullPath);
+            Console.WriteLine("Wrote " + members.Length + " classified public API inventory entries to " + fullPath);
+        }
+
+        private static string Classify(Type type, string kind, string name)
+        {
+            if (kind == "Property" || kind == "Event") return "Diagnostic";
+            if (name.IndexOf("Error", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("Validate", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf("Throw", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Contract";
+            if (name == "Update" || name == "UpdateAll" || name == "TickAll" ||
+                name == "EvaluateConditions" || name == "Step" || name == "TransitionTo" ||
+                name == "ResetFSMInstance" || name == "ToInteger" || name == "ToString" ||
+                name == "BuildDefinition" || name == "State" || name == "Transition" ||
+                name == "AnyTransition" || name == "CreateFiniteStateMachine" ||
+                name == "CreateInstance" || name == "Register" || name == "RegisterDefinition")
+                return "TimedCandidate";
+            if (name.StartsWith("Get", StringComparison.Ordinal) ||
+                name == "Contains" || name == "Exists" || name.IndexOf("Count", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Diagnostic";
+            if (name.StartsWith("Destroy", StringComparison.Ordinal) ||
+                name.StartsWith("Remove", StringComparison.Ordinal) ||
+                name.StartsWith("Unregister", StringComparison.Ordinal) ||
+                name.StartsWith("Move", StringComparison.Ordinal) ||
+                name.StartsWith("Add", StringComparison.Ordinal) ||
+                name.StartsWith("Reset", StringComparison.Ordinal) ||
+                name == "Initialize")
+                return "Scenario";
+            return "Contract";
+        }
+
+        private static string Coverage(Type type, string kind, string name)
+        {
+            if (kind != "Method") return "Not yet measured; inventory accounted";
+            var surface = type.FullName ?? type.Name;
+            if ((surface == "TheSingularityWorkshop.FSM_API.FsmApi+Interaction" ||
+                 surface == "TheSingularityWorkshop.FSM_API.IntegerBacked.FsmApi+Interaction") &&
+                (name == "Update" || name == "Contains" || name == "Exists"))
+                return "Current public-facade benchmark";
+            if (surface == "TheSingularityWorkshop.FSM_API.IntegerBacked.FSMRuntime" &&
+                (name == "Update" || name == "Contains"))
+                return "Exercised transitively by current public-facade benchmark";
+            return "Not yet measured; inventory accounted";
         }
     }
 }
