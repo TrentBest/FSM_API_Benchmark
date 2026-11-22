@@ -92,7 +92,7 @@ namespace FSM_Benchmark_2_0
         public void Cleanup()
         {
             StringApi.Internal.ResetAPI(hardReset: true);
-            ClearIntegerDefinitions();
+            BenchmarkRuntimeCleanup.ClearIntegerDefinitions();
         }
 
         [Benchmark(Baseline = true)]
@@ -107,16 +107,6 @@ namespace FSM_Benchmark_2_0
         public void IntegerBackedUpdate()
         {
             IntegerApi.Interaction.Update(IntegerGroup);
-        }
-
-        private static void ClearIntegerDefinitions()
-        {
-            // The public integer facade owns a process-wide runtime. Clear the full
-            // parameter range so smaller cases cannot inherit definitions from a prior case.
-            for (var definitionID = 0; definitionID < 50; definitionID++)
-            {
-                IntegerApi.Interaction.Unregister(definitionID);
-            }
         }
 
         private void VerifyAndReset(List<BenchmarkContext> contexts, string representation)
@@ -169,7 +159,7 @@ namespace FSM_Benchmark_2_0
         public void Setup()
         {
             StringApi.Internal.ResetAPI(hardReset: true);
-            ClearIntegerDefinitions();
+            BenchmarkRuntimeCleanup.ClearIntegerDefinitions();
             _targetID = DefinitionCount - 1;
             _targetName = "FSM_" + _targetID;
 
@@ -205,7 +195,7 @@ namespace FSM_Benchmark_2_0
         public void Cleanup()
         {
             StringApi.Internal.ResetAPI(hardReset: true);
-            ClearIntegerDefinitions();
+            BenchmarkRuntimeCleanup.ClearIntegerDefinitions();
         }
 
         [Benchmark(Baseline = true)]
