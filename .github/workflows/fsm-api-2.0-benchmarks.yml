@@ -1,0 +1,47 @@
+name: FSM_API 2.0 benchmark validation
+
+on:
+  push:
+    branches: [benchmark-complete]
+    paths:
+      - "FSM_Benchmark_2_0/**"
+      - "FSM_Benchmark.slnx"
+      - ".github/workflows/fsm-api-2.0-benchmarks.yml"
+  pull_request:
+    branches: [development]
+    paths:
+      - "FSM_Benchmark_2_0/**"
+      - "FSM_Benchmark.slnx"
+      - ".github/workflows/fsm-api-2.0-benchmarks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out benchmark repository
+        uses: actions/checkout@v4
+
+      - name: Check out FSM_API 2.0 development source
+        uses: actions/checkout@v4
+        with:
+          repository: TrentBest/FSM_API
+          ref: development
+          path: FSM_API
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore 2.0 benchmark project
+        run: dotnet restore FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj
+
+      - name: Build 2.0 benchmark project
+        run: dotnet build FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-restore
+
+      - name: Run BenchmarkDotNet dry smoke tests
+        run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --job Dry
