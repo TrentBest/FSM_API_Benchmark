@@ -1530,3 +1530,14 @@ The principle is simple:
 > **Build the system. Measure the system. Understand the system. Then optimize the system.**
 
 Because performance should be measured, not imagined.
+
+
+---
+
+# ⚙️ FSM_API 2.0 — String vs. Integer Runtime
+
+The 2.0 development runtime now has a separate source-linked benchmark lane. It compares the string-backed and native integer-backed implementations from the current `FSM_API/development` source; it does not mistake the published 1.x NuGet package for the 2.0 implementation.
+
+Start with the [FSM_API 2.0 benchmark methodology and coverage](FSM_API_2_0_BENCHMARKS.md). The initial suite measures equivalent scheduler updates across definition/instance scaling and successful definition lookup. Setup verifies equal callback counts before measurement. A GitHub Actions dry run validates compilation and fixture setup; it is deliberately not treated as a performance result.
+
+**No speedup is claimed yet.** The canonical comparison must come from a clean local BenchmarkDotNet run with both representations measured in the same process, on the same machine, with the exact FSM_API source commit recorded.
