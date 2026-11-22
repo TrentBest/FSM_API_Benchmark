@@ -16,6 +16,32 @@ Every public callable member must have exactly one primary disposition:
 
 Overloads are separate inventory entries. Generic methods, property accessors, constructors, and events are included in the reflection inventory. Private implementation methods are not public API coverage, but hot private methods should be profiled when a public benchmark identifies them as bottlenecks.
 
+## Automated reflection snapshot
+
+The first completed reflection pass against FSM_API source commit `9c06ec955713bbe6db1c4b5f395acdbd1bcfaa7a` produced **334 public API inventory entries**:
+
+| Reflected member kind | Count |
+|---|---:|
+| Methods (including overloads) | 251 |
+| Constructors | 16 |
+| Properties | 65 |
+| Events | 2 |
+| **Total** | **334** |
+
+All entries have a disposition; none are left unclassified:
+
+| Disposition | Count |
+|---|---:|
+| Timed candidate | 59 |
+| Scenario | 55 |
+| Diagnostic | 109 |
+| Contract | 111 |
+| **Total** | **334** |
+
+At that snapshot, eight entries were exercised by the paired benchmark path: six public-facade members and two integer-runtime members exercised transitively. The other 326 are accounted for but not yet measured. This is the honest starting coverage—not a claim of 100% performance testing.
+
+The machine-readable inventory, including declaring type, surface type, signature, disposition, and coverage status, is retained in the [GitHub Actions inventory artifact](https://github.com/TrentBest/FSM_API_Benchmark/actions/runs/44983854777). Its provenance records benchmark commit `36333dda777f053d65a20a74f2b85c5aed557af2` and FSM_API source commit `9c06ec955713bbe6db1c4b5f395acdbd1bcfaa7a`. Re-run the inventory whenever the FSM_API source changes; counts and signatures are source-version-specific.
+
 ## Public API families and planned coverage
 
 | API family | Members / operations to inventory | Measurement or validation family | Current status |
