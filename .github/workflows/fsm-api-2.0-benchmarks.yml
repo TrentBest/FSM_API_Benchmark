@@ -40,7 +40,7 @@ concurrency:
 
 jobs:
   benchmark-smoke:
-    name: Build and smoke-test (.NET 10)
+    name: Build, inventory, and smoke-test (.NET 10)
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -76,20 +76,28 @@ jobs:
       - name: Build both benchmark projects
         run: dotnet build FSM_Benchmark.slnx --configuration Release --no-restore
 
+      - name: Generate complete public API inventory
+        shell: pwsh
+        run: |
+          $env:FSM_API_SOURCE_SHA = git -C FSM_API rev-parse HEAD
+          dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --inventory PublicApiInventory.json
+
       - name: Run legacy 1.x execution smoke test
         run: dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build -- --job Dry --filter "*FSM_ExecutionBenchmarks*"
 
       - name: Run FSM_API 2.0 representation smoke tests
         run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --job Dry
 
-      - name: Upload build and smoke evidence
+      - name: Upload build, inventory, and smoke evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fsm-api-benchmark-smoke-${{ github.run_id }}
-          path: benchmark-provenance.txt
+          path: |
+            benchmark-provenance.txt
+            PublicApiInventory.json
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 90
 
   calibrated-benchmarks:
     name: Calibrated FSM_API 2.0 benchmarks
@@ -131,6 +139,12 @@ jobs:
         run: |
           dotnet restore FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj
           dotnet build FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-restore
+
+      - name: Generate complete public API inventory
+        shell: pwsh
+        run: |
+          $env:FSM_API_SOURCE_SHA = git -C FSM_API rev-parse HEAD
+          dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --inventory BenchmarkDotNet.Artifacts/PublicApiInventory.json
 
       - name: Run full FSM_API 2.0 BenchmarkDotNet matrix
         run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --exporters GitHub,Markdown,Csv,Json --artifacts BenchmarkDotNet.Artifacts
