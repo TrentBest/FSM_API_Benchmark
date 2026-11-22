@@ -147,7 +147,16 @@ jobs:
           dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --inventory BenchmarkDotNet.Artifacts/PublicApiInventory.json
 
       - name: Run full FSM_API 2.0 BenchmarkDotNet matrix
-        run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --exporters GitHub,Markdown,Csv,Json --artifacts BenchmarkDotNet.Artifacts
+        run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --exporters GitHub Markdown Csv Json --artifacts BenchmarkDotNet.Artifacts
+
+      - name: Verify benchmark reports were produced
+        shell: pwsh
+        run: |
+          $reports = Get-ChildItem -Path BenchmarkDotNet.Artifacts/results -Recurse -File -Include "*.md", "*.csv", "*.json"
+          if (-not $reports) {
+            throw "BenchmarkDotNet completed without producing Markdown/CSV/JSON result files."
+          }
+          $reports | Select-Object FullName, Length | Format-Table -AutoSize
 
       - name: Upload raw BenchmarkDotNet results and provenance
         if: always()
