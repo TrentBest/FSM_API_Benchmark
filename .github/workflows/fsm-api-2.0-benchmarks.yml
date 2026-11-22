@@ -1,15 +1,17 @@
-name: FSM_API 2.0 benchmark validation
+name: FSM_API benchmark validation
 
 on:
   push:
     branches: [benchmark-complete]
     paths:
+      - "FSM_Benchmark/**"
       - "FSM_Benchmark_2_0/**"
       - "FSM_Benchmark.slnx"
       - ".github/workflows/fsm-api-2.0-benchmarks.yml"
   pull_request:
     branches: [development]
     paths:
+      - "FSM_Benchmark/**"
       - "FSM_Benchmark_2_0/**"
       - "FSM_Benchmark.slnx"
       - ".github/workflows/fsm-api-2.0-benchmarks.yml"
@@ -20,7 +22,8 @@ permissions:
 
 jobs:
   benchmark-smoke:
-    runs-on: ubuntu-latest
+    # The existing 1.x suite includes the Visual Studio CPU diagnoser.
+    runs-on: windows-latest
     steps:
       - name: Check out benchmark repository
         uses: actions/checkout@v4
@@ -37,11 +40,14 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Restore 2.0 benchmark project
-        run: dotnet restore FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj
+      - name: Restore benchmark solution
+        run: dotnet restore FSM_Benchmark.slnx
 
-      - name: Build 2.0 benchmark project
-        run: dotnet build FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-restore
+      - name: Build both benchmark projects
+        run: dotnet build FSM_Benchmark.slnx --configuration Release --no-restore
 
-      - name: Run BenchmarkDotNet dry smoke tests
+      - name: Run legacy 1.x execution smoke test
+        run: dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build -- --job Dry --filter "*FSM_ExecutionBenchmarks*"
+
+      - name: Run FSM_API 2.0 representation smoke tests
         run: dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj --configuration Release --no-build -- --job Dry
