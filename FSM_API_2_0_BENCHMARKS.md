@@ -38,7 +38,7 @@ No performance conclusion is made until BenchmarkDotNet has produced actual resu
 Clone this benchmark repository, then clone the FSM_API repository into a child directory named `FSM_API`:
 
 ```bash
-git clone https://github.com/TrentBest/FSM_API_Benchmark.git
+git clone -b benchmark-complete https://github.com/TrentBest/FSM_API_Benchmark.git
 cd FSM_API_Benchmark
 git clone https://github.com/TrentBest/FSM_API.git FSM_API
 git -C FSM_API switch development
