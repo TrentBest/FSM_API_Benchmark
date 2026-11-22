@@ -31,7 +31,7 @@ These are end-to-end runtime comparisons, not a claim that every measured differ
 
 In particular, the integer runtime currently scans its registered definition array and filters the tick's handle snapshot by definition. The multi-definition × multi-instance matrix deliberately exposes that implementation's scaling behavior; it must not be hidden by reporting only a one-definition result.
 
-No performance conclusion is made until BenchmarkDotNet has produced actual results on a recorded machine. The hosted CI job is a compile/setup smoke test using the `Dry` job, not a performance baseline and not a regression gate.
+No performance conclusion is made until BenchmarkDotNet has produced actual results on a recorded machine. The hosted CI job builds both the legacy 1.x and source-linked 2.0 benchmark projects, then runs BenchmarkDotNet `Dry` smoke tests for each. This is compile/setup validation, not a performance baseline and not a regression gate.
 
 ## Reproduce locally
 
