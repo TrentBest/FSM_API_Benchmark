@@ -18,27 +18,27 @@ Overloads are separate inventory entries. Generic methods, property accessors, c
 
 ## Automated reflection snapshot
 
-The first completed reflection pass against FSM_API source commit `9c06ec955713bbe6db1c4b5f395acdbd1bcfaa7a` produced **334 public API inventory entries**:
+The first completed reflection pass against FSM_API source commit `9c06ec955713bbe6db1c4b5f395acdbd1bcfaa7a` produced **334 public surface entries**. The inventory intentionally records each exported surface type, including inherited public members; therefore a method inherited by multiple public types can appear more than once. Grouping by declaring type and signature yields 322 unique declarations.
 
-| Reflected member kind | Count |
+| Reflected member kind | Surface entries | Unique declarations |
+|---|---:|---:|
+| Methods (including overloads) | 251 | 246 |
+| Constructors | 16 | 16 |
+| Properties | 65 | 58 |
+| Events | 2 | 2 |
+| **Total** | **334** | **322** |
+
+All surface entries have a disposition; none are left unclassified. The unique-declaration breakdown is:
+
+| Disposition | Unique declarations |
 |---|---:|
-| Methods (including overloads) | 251 |
-| Constructors | 16 |
-| Properties | 65 |
-| Events | 2 |
-| **Total** | **334** |
-
-All entries have a disposition; none are left unclassified:
-
-| Disposition | Count |
-|---|---:|
-| Timed candidate | 59 |
-| Scenario | 55 |
-| Diagnostic | 109 |
+| Timed candidate | 55 |
+| Scenario | 54 |
+| Diagnostic | 102 |
 | Contract | 111 |
-| **Total** | **334** |
+| **Total** | **322** |
 
-At that snapshot, eight entries were exercised by the paired benchmark path: six public-facade members and two integer-runtime members exercised transitively. The other 326 are accounted for but not yet measured. This is the honest starting coverage—not a claim of 100% performance testing.
+At that snapshot, eight unique declarations were exercised by the paired benchmark path: six public-facade members and two integer-runtime members exercised transitively. The other 314 unique declarations are accounted for but not yet measured. This is the honest starting coverage—not a claim of 100% performance testing.
 
 The machine-readable inventory, including declaring type, surface type, signature, disposition, and coverage status, is retained in the [GitHub Actions inventory artifact](https://github.com/TrentBest/FSM_API_Benchmark/actions/runs/44983854777). Its provenance records benchmark commit `36333dda777f053d65a20a74f2b85c5aed557af2` and FSM_API source commit `9c06ec955713bbe6db1c4b5f395acdbd1bcfaa7a`. Re-run the inventory whenever the FSM_API source changes; counts and signatures are source-version-specific.
 
