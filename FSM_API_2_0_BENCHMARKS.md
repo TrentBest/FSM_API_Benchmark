@@ -11,7 +11,7 @@ This project benchmarks the current 2.0 source directly. It does not use the pub
 | Stable benchmark ID | Methods | Workload dimensions | Question |
 |---|---|---|---|
 | `FSMAPI.Execution.Update.NoTransitions` | `StringBackedUpdate`, `IntegerBackedUpdate` | 1/10/50 definitions × 1/10/50 instances per definition | What does a complete scheduler update cost as the registry and live population grow? |
-| `FSMAPI.Lookup.Definition.ById.Hit` | `StringBackedLookupHit`, `IntegerBackedLookupHit` | 1/10/50 definitions; successful lookup of the last definition | What is the cost of resolving an existing definition through each representation? |
+| `FSMAPI.Lookup.Definition.ByIdentity.Hit` | `StringBackedLookupHit`, `IntegerBackedLookupHit` | 1/10/50 definitions; successful lookup of the last definition | What is the cost of resolving an existing definition through each representation? |
 
 Both execution methods call their respective public 2.0 update facades. The execution comparison holds constant:
 - the same number of definitions and live instances;
@@ -27,7 +27,7 @@ The public integer facade owns a process-wide runtime, so the fixture unregister
 
 ## Interpretation boundaries
 
-These are end-to-end runtime comparisons, not a claim that every measured difference comes solely from integer-versus-string equality. The update benchmark includes each representation's registry traversal, scheduler, handle iteration, and public update boundary. The lookup benchmark isolates successful definition-presence lookup more narrowly.
+These are end-to-end runtime comparisons, not a claim that every measured difference comes solely from integer-versus-string equality. The update benchmark includes each representation's registry traversal, scheduler, handle iteration, and public update boundary. The lookup benchmark isolates successful definition-presence lookup more narrowly. It compares each representation's public identity-resolution contract: the string API resolves a name within a named processing group, while the integer API resolves a globally unique FSM ID. These are analogous presence queries at their respective boundaries, not identical key shapes; interpret the result as representation-specific public lookup cost, not as a pure string-comparison-versus-integer-comparison microbenchmark.
 
 In particular, the integer runtime currently scans its registered definition array and filters the tick's handle snapshot by definition. The multi-definition × multi-instance matrix deliberately exposes that implementation's scaling behavior; it must not be hidden by reporting only a one-definition result.
 
