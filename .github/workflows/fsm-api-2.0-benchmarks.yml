@@ -21,6 +21,11 @@ on:
       - ".github/workflows/fsm-api-2.0-benchmarks.yml"
   workflow_dispatch:
     inputs:
+      fsm_api_ref:
+        description: "FSM_API branch, tag, or exact commit SHA to benchmark"
+        required: false
+        type: string
+        default: development
       run_calibrated_benchmarks:
         description: "Run full BenchmarkDotNet measurements and upload raw results"
         required: false
@@ -51,7 +56,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TrentBest/FSM_API
-          ref: development
+          ref: ${{ github.event.inputs.fsm_api_ref || 'development' }}
           path: FSM_API
 
       - name: Set up .NET 10
@@ -64,6 +69,7 @@ jobs:
         run: |
           "BenchmarkRepository=$env:GITHUB_REPOSITORY" | Out-File -FilePath benchmark-provenance.txt
           "BenchmarkCommit=$env:GITHUB_SHA" | Out-File -FilePath benchmark-provenance.txt -Append
+          "FsmApiRequestedRef=${{ github.event.inputs.fsm_api_ref || 'development' }}" | Out-File -FilePath benchmark-provenance.txt -Append
           "FsmApiCommit=$(git -C FSM_API rev-parse HEAD)" | Out-File -FilePath benchmark-provenance.txt -Append
           "RunnerOS=$env:RUNNER_OS" | Out-File -FilePath benchmark-provenance.txt -Append
           "RunnerImage=$env:ImageOS" | Out-File -FilePath benchmark-provenance.txt -Append
@@ -113,7 +119,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: TrentBest/FSM_API
-          ref: development
+          ref: ${{ github.event.inputs.fsm_api_ref || 'development' }}
           path: FSM_API
 
       - name: Set up .NET 10
@@ -128,6 +134,7 @@ jobs:
           "BenchmarkRepository=$env:GITHUB_REPOSITORY" | Out-File BenchmarkDotNet.Artifacts/provenance.txt
           "BenchmarkCommit=$env:GITHUB_SHA" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
           "FsmApiRepository=TrentBest/FSM_API" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
+          "FsmApiRequestedRef=${{ github.event.inputs.fsm_api_ref || 'development' }}" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
           "FsmApiCommit=$(git -C FSM_API rev-parse HEAD)" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
           "RunnerOS=$env:RUNNER_OS" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
           "RunnerImage=$env:ImageOS" | Out-File BenchmarkDotNet.Artifacts/provenance.txt -Append
