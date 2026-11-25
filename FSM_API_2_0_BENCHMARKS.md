@@ -42,11 +42,14 @@ git clone -b benchmark-complete https://github.com/TrentBest/FSM_API_Benchmark.g
 cd FSM_API_Benchmark
 git clone https://github.com/TrentBest/FSM_API.git FSM_API
 git -C FSM_API switch development
+# For a candidate branch or exact commit, select that ref instead before running:
 dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj -c Release -- --filter "*FSM_2_0_ExecutionBenchmarks*"
 dotnet run --project FSM_Benchmark_2_0/FSM_Benchmark_2_0.csproj -c Release -- --filter "*FSM_2_0_LookupHitBenchmarks*"
 ```
 
 For a short exploratory run, append `--job Short`. Use the default BenchmarkDotNet job for the canonical local measurement. Do not run under a debugger.
+
+The GitHub Actions workflow also supports manual dispatch with an `fsm_api_ref` input. Supply the FSM_API branch, tag, or exact commit SHA to benchmark that source snapshot; the artifact records both the requested ref and the resolved source SHA. For a PR candidate, use its exact head SHA so the result cannot silently drift as the branch changes.
 
 BenchmarkDotNet writes reports under `BenchmarkDotNet.Artifacts/results`. Preserve the raw CSV/Markdown/HTML output rather than copying only the mean.
 
