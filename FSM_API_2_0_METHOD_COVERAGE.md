@@ -64,7 +64,7 @@ The machine-readable inventory, including declaring type, surface type, signatur
 | Stable ID | Methods | Parameters | What it establishes |
 |---|---|---|---|
 | `FSMAPI.Execution.Update.NoTransitions` | `StringBackedUpdate`, `IntegerBackedUpdate` | 1/10/50 definitions × 1/10/50 instances per definition | Public scheduler/update cost with identical callback workload |
-| `FSMAPI.Lookup.Definition.ById.Hit` | `StringBackedLookupHit`, `IntegerBackedLookupHit` | 1/10/50 definitions | Successful definition-presence lookup |
+| `FSMAPI.Lookup.Definition.ByIdentity.Hit` | `StringBackedLookupHit`, `IntegerBackedLookupHit` | 1/10/50 definitions | Successful public identity-presence lookup (string name+group versus integer FSM ID) |
 
 These two cases are the starting point only. They do not constitute full method coverage.
 
