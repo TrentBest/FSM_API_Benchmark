@@ -24,6 +24,11 @@ The Dry job validates benchmark discovery, setup, and invocation. It is not a
 performance measurement and must not be treated as timing evidence or a
 regression threshold.
 
+For the paired FSM_API 2.0 workflow, manual dispatch accepts an `fsm_api_ref`
+value (branch, tag, or exact commit SHA). Use the exact candidate SHA when
+collecting comparative evidence. The workflow records both the requested ref
+and resolved source commit in its provenance artifact.
+
 A successful build and smoke test establish compilation, dependency
 resolution, and basic runtime execution on the configured .NET 10 runner.
 They do not establish benchmark correctness or a measured operating envelope.
