@@ -199,14 +199,14 @@ namespace FSM_Benchmark_2_0
         }
 
         [Benchmark(Baseline = true)]
-        [BenchmarkCategory("FSMAPI.Lookup.Definition.ById.Hit")]
+        [BenchmarkCategory("FSMAPI.Lookup.Definition.ByIdentity.Hit")]
         public bool StringBackedLookupHit()
         {
             return StringApi.Interaction.Exists(_targetName, StringGroup);
         }
 
         [Benchmark]
-        [BenchmarkCategory("FSMAPI.Lookup.Definition.ById.Hit")]
+        [BenchmarkCategory("FSMAPI.Lookup.Definition.ByIdentity.Hit")]
         public bool IntegerBackedLookupHit()
         {
             return IntegerApi.Interaction.Contains(_targetID);
