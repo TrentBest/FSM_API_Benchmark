@@ -45,6 +45,7 @@
   const m=report.measurements,d=report.derived;
   const required=["applicationLogic","integerHandle","stringHandle","integerScheduled","stringScheduled"];
   if(required.some(k=>!m[k]||typeof m[k].meanNs!=="number"))throw new Error("The report is missing one or more matched benchmark lanes.");
+  if(m.applicationLogic.meanNs<1)throw new Error("The application baseline is below the 1 ns plausibility floor; likely optimizer elimination. No performance claim is shown.");
   status.textContent="Measured · exact-source report";status.classList.add("measured");
   table.className="table-wrap";
   const row=(label,intKey,strKey,derived)=>`<tr><td><strong>${label}</strong></td><td>${cell(m.applicationLogic.meanNs)}</td><td>${cell(m[intKey].meanNs)}</td><td>${cell(m[strKey].meanNs)}</td><td>${cell(derived.integerRuntimeOverheadNs)}<br><small>${fmt(derived.integerRuntimeOverheadPercent)}%</small></td><td>${cell(derived.stringRuntimeOverheadNs)}<br><small>${fmt(derived.stringRuntimeOverheadPercent)}%</small></td><td>${cell(derived.stringPenaltyOverIntegerNs)}<br><small>${fmt(derived.stringPenaltyOverIntegerPercent)}%</small></td><td>${cell(m[intKey].standardDeviationNs)}</td><td>${cell(m[strKey].standardDeviationNs)}</td><td>${cell(m[intKey].allocatedBytesPerOperation," B/op")}</td><td>${cell(m[strKey].allocatedBytesPerOperation," B/op")}</td></tr>`;
