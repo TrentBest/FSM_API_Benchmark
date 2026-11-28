@@ -9,7 +9,7 @@
 
 [![Sith Policy](assets/sith-policy.svg)](https://github.com/TrentBest/FSM_API_Benchmark/actions/workflows/sith-policy.yml)
 
-**[Open the executive performance brief](https://trentbest.github.io/FSM_API_Benchmark/)** — a plain-language comparison of application logic alone, integer-backed FSM execution, and string-backed FSM execution. The report is intentionally empty until a matched, successful benchmark run produces all three measurements.
+**[Open the executive performance brief](https://trentbest.github.io/FSM_API_Benchmark/)** — a plain-language comparison of application logic alone, integer-backed FSM execution, and string-backed FSM execution. The report is intentionally empty until a matched, successful benchmark run produces all all matched measurements.
 
 ## What we measure
 
