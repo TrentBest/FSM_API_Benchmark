@@ -33,10 +33,13 @@ BYTE_UNITS = {"B": 1.0, "KB": 1024.0, "MB": 1024.0**2, "GB": 1024.0**3}
 def parse_quantity(value: str | None, units: dict[str, float]) -> float | None:
     if value is None or not value.strip() or value.strip().lower() in {"na", "n/a", "-"}:
         return None
-    match = re.match(r"^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([A-Za-zµμ]+)?\s*$", value)
+    match = re.match(r"^\s*([+-]?(?:\d[\d,]*(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*([A-Za-zµμ]+)?\s*$", value)
     if not match:
         raise ValueError(f"Unrecognized BenchmarkDotNet quantity: {value!r}")
-    number = float(match.group(1))
+    numeric_text = match.group(1)
+    if "," in numeric_text and not re.fullmatch(r"[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?(?:[eE][+-]?\d+)?", numeric_text):
+        raise ValueError(f"Invalid thousands grouping in BenchmarkDotNet quantity: {value!r}")
+    number = float(numeric_text.replace(",", ""))
     unit = match.group(2) or next(iter(units))
     if not math.isfinite(number) or unit not in units:
         raise ValueError(f"Unsupported or non-finite quantity: {value!r}")
