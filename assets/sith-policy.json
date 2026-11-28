@@ -10,11 +10,13 @@
     "benchmark-ledger-foundation",
     "development",
     "docs/benchmarking",
+    "feature/executive-integer-string-benchmarks",
+    "feature/integer-runtime-scaling-baselines",
     "master"
   ],
-  "branch_count": 5,
+  "branch_count": 7,
   "status": "NON-COMPLIANT",
-  "evaluated_at": "2026-11-27T13:55:48Z",
-  "workflow_run": "https://github.com/TrentBest/FSM_API_Benchmark/actions/runs/46011314753",
-  "triggering_commit": "308a6894bd8d3c1cf4d66adcf7041043a835b8a1"
+  "evaluated_at": "2026-11-28T13:05:28Z",
+  "workflow_run": "https://github.com/TrentBest/FSM_API_Benchmark/actions/runs/46147842442",
+  "triggering_commit": "67e085c233410d9ea3888a61668e66a66101b624"
 }
