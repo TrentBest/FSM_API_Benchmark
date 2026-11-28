@@ -20,6 +20,7 @@ class ExecutiveReportParserTests(unittest.TestCase):
 
     def test_converts_time_and_allocation_units(self) -> None:
         self.assertEqual(REPORT.parse_quantity("1.5 us", REPORT.TIME_UNITS_TO_NS), 1500.0)
+        self.assertEqual(REPORT.parse_quantity("2,387.4 μs", REPORT.TIME_UNITS_TO_NS), 2387400.0)
         self.assertEqual(REPORT.parse_quantity("2 KB", REPORT.BYTE_UNITS), 2048.0)
 
     def test_requires_all_five_matched_lanes(self) -> None:
