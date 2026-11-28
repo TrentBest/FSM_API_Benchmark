@@ -13,7 +13,7 @@
 
 ## What we measure
 
-The matched workload executes one active two-state FSM update. Every lane performs the same counter increment and parity-based transition decision:
+The matched workload executes one active two-state FSM update. Every lane performs the same counter increment and parity-based transition decision. Separate integer-runtime scaling workloads now measure one definition with up to one million live handles, a definition-by-instance matrix, and sparse definition/state identities. See [Integer Runtime Scaling Benchmarks](docs/INTEGER_RUNTIME_SCALING.md) for exact fixture dimensions and interpretation boundaries.
 
 | Lane | What it measures |
 |---|---|
@@ -33,7 +33,7 @@ The integer-backed runtime is not present in the published FSM_API 1.0.13 releas
 - [Benchmark source and workflows](https://github.com/TrentBest/FSM_API_Benchmark)
 - [Executive report methodology](docs/EXECUTIVE_BENCHMARK_REPORT.md)
 
-Pull requests build the harness and smoke-test all five paths. Development-branch changes run the full BenchmarkDotNet evidence workflow, preserve the raw CSV output, create the executive summary from those measurements, and publish the measured site through CiAi. The same workflow can also be run manually from development. No synthetic or hand-entered performance numbers are used.
+Pull requests build the harness and smoke-test the matched workload plus bounded scaling and sparse-identity fixtures. Development-branch changes run the full BenchmarkDotNet evidence workflow, including the million-handle population case, preserve the raw CSV output, create the executive summary from the matched measurements, and publish the measured site through CiAi. The same workflow can also be run manually from development. No synthetic or hand-entered performance numbers are used.
 
 ## Why CiAi is linked
 
