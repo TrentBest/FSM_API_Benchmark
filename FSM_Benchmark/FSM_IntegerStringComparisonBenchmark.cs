@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using TheSingularityWorkshop.FSM_API;
 using IntegerFsmApi = TheSingularityWorkshop.FSM_API.IntegerBacked.FsmApi;
@@ -38,10 +39,10 @@ public class FSM_IntegerStringComparisonBenchmark
     private TheSingularityWorkshop.FSM_API.IntegerBacked.FSMHandleInt _integerHandle;
     private int _applicationState;
 
-    private static readonly Action<BenchmarkContext> ApplicationUpdateA = context => context.CounterA++;
-    private static readonly Action<BenchmarkContext> ApplicationUpdateB = context => context.CounterB++;
-    private static readonly Func<BenchmarkContext, bool> ApplicationToB = context => (context.Total & 1) == 1;
-    private static readonly Func<BenchmarkContext, bool> ApplicationToA = context => (context.Total & 1) == 0;
+    private static readonly Action<BenchmarkContext> ApplicationUpdateA = UpdateApplicationA;
+    private static readonly Action<BenchmarkContext> ApplicationUpdateB = UpdateApplicationB;
+    private static readonly Func<BenchmarkContext, bool> ApplicationToB = ShouldApplicationTransitionToB;
+    private static readonly Func<BenchmarkContext, bool> ApplicationToA = ShouldApplicationTransitionToA;
 
     [GlobalSetup]
     public void Setup()
@@ -180,21 +181,37 @@ public class FSM_IntegerStringComparisonBenchmark
         }
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void UpdateApplicationA(BenchmarkContext context) => context.CounterA++;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void UpdateApplicationB(BenchmarkContext context) => context.CounterB++;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static bool ShouldApplicationTransitionToB(BenchmarkContext context) => (context.Total & 1) == 1;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static bool ShouldApplicationTransitionToA(BenchmarkContext context) => (context.Total & 1) == 0;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void IncrementA(IStateContext context)
     {
         if (context is BenchmarkContext benchmarkContext)
             benchmarkContext.CounterA++;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static void IncrementB(IStateContext context)
     {
         if (context is BenchmarkContext benchmarkContext)
             benchmarkContext.CounterB++;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool IsOdd(IStateContext context) =>
         context is BenchmarkContext benchmarkContext && (benchmarkContext.Total & 1) == 1;
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool IsEven(IStateContext context) =>
         context is BenchmarkContext benchmarkContext && (benchmarkContext.Total & 1) == 0;
 }
