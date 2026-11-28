@@ -44,6 +44,19 @@ class ExecutiveReportParserTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Duplicate benchmark result"):
                 REPORT.read_measurements(folder)
 
+    def test_rejects_subnanosecond_application_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            self.write_csv(folder, [
+                "ApplicationLogicBaseline,0.5 ns,0.01 ns,0.02 ns,0.5 ns,0 B",
+                "IntegerHandleUpdate,20 ns,1 ns,2 ns,20 ns,0 B",
+                "StringHandleUpdate,30 ns,1 ns,3 ns,30 ns,8 B",
+                "IntegerScheduledTick,25 ns,1 ns,2 ns,25 ns,0 B",
+                "StringScheduledTick,45 ns,2 ns,4 ns,45 ns,8 B",
+            ])
+            with self.assertRaisesRegex(ValueError, "below 1 ns"):
+                REPORT.read_measurements(folder)
+
     def test_accepts_complete_matched_run_and_preserves_each_lane(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)
