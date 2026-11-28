@@ -18,6 +18,24 @@ class ExecutiveReportParserTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def test_uses_runtime_recorded_by_benchmarkdotnet(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            (folder / "run-report-github.md").write_text(
+                "BenchmarkDotNet v0.15.2\\n  DefaultJob : .NET 10.0.15, X64 RyuJIT\\n",
+                encoding="utf-8",
+            )
+            runtime, _ = REPORT.dotnet_runtime_details(folder)
+            self.assertEqual(runtime, ".NET 10.0.15")
+
+    def test_rejects_inconsistent_benchmarkdotnet_runtimes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            (folder / "a-report-github.md").write_text("  DefaultJob : .NET 10.0.15\\n", encoding="utf-8")
+            (folder / "b-report-github.md").write_text("  DefaultJob : .NET 10.0.16\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "exactly one consistent"):
+                REPORT.dotnet_runtime_details(folder)
+
     def test_converts_time_and_allocation_units(self) -> None:
         self.assertEqual(REPORT.parse_quantity("1.5 us", REPORT.TIME_UNITS_TO_NS), 1500.0)
         self.assertEqual(REPORT.parse_quantity("2,387.4 μs", REPORT.TIME_UNITS_TO_NS), 2387400.0)
