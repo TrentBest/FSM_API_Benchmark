@@ -33,7 +33,7 @@ The integer-backed runtime is not present in the published FSM_API 1.0.13 releas
 - [Benchmark source and workflows](https://github.com/TrentBest/FSM_API_Benchmark)
 - [Executive report methodology](docs/EXECUTIVE_BENCHMARK_REPORT.md)
 
-The automatic build validates the harness and pinned source dependency. The separate manual evidence workflow runs BenchmarkDotNet, preserves the raw CSV output, creates the executive summary from those measurements, and publishes the measured site through CiAi. No synthetic or hand-entered performance numbers are used.
+Pull requests build the harness and smoke-test all five paths. Development-branch changes run the full BenchmarkDotNet evidence workflow, preserve the raw CSV output, create the executive summary from those measurements, and publish the measured site through CiAi. The same workflow can also be run manually from development. No synthetic or hand-entered performance numbers are used.
 
 ## Why CiAi is linked
 
