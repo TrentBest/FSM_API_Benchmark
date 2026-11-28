@@ -57,6 +57,9 @@ jobs:
           dotnet --info
           git -C external/FSM_API log -1 --format='%H %s'
 
+      - name: Test executive report parser
+        run: python3 -m unittest discover -s tests -p "test_*.py"
+
       - name: Restore
         run: dotnet restore FSM_Benchmark/FSM_Benchmark.csproj
 
