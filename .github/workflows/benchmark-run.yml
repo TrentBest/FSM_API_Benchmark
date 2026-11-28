@@ -77,6 +77,24 @@ jobs:
           --filter "*FSM_IntegerStringComparisonBenchmark*"
 
 
+      - name: Measure integer runtime population scaling
+        run: >-
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj
+          --configuration Release --no-build --
+          --filter "*FSM_IntegerRuntimePopulationBenchmarks*"
+
+      - name: Measure integer runtime definition matrix
+        run: >-
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj
+          --configuration Release --no-build --
+          --filter "*FSM_IntegerRuntimeDefinitionMatrixBenchmarks*"
+
+      - name: Measure sparse definition and state identity storage
+        run: >-
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj
+          --configuration Release --no-build --
+          --filter "*FSM_IntegerSparse*IdentityBenchmarks*"
+
       - name: Build executive report from measured CSV
         env:
           FSM_API_SHA: ${{ steps.source.outputs.fsm_api_sha }}
