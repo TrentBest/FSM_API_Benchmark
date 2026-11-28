@@ -107,7 +107,7 @@ def dotnet_runtime_details(results_dir: Path) -> tuple[str, str | None]:
         report = report_path.read_text(encoding="utf-8", errors="replace")
         reported_runtimes.update(
             f".NET {version}"
-            for version in re.findall(r"^\\s*DefaultJob\\s*:\\s*\\.NET\\s+(10\\.\\d+\\.\\d+)", report, re.MULTILINE)
+            for version in re.findall(r"^ *DefaultJob *: *[.]NET +(10[.][0-9]+[.][0-9]+)", report, re.MULTILINE)
         )
     if len(reported_runtimes) != 1:
         raise ValueError(
