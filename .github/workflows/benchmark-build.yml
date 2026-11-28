@@ -74,9 +74,22 @@ jobs:
       - name: Build Release
         run: dotnet build FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-restore
 
-      - name: Smoke-run matched runtime paths (BenchmarkDotNet Dry job)
-        run: >-
-          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj
-          --configuration Release --no-build --
-          --filter "*FSM_IntegerStringComparisonBenchmark*"
-          --job Dry
+      - name: Smoke-run and validate all five matched runtime paths
+        env:
+          FSM_API_SHA: ${{ steps.source.outputs.fsm_api_sha }}
+          HARNESS_SHA: ${{ steps.source.outputs.harness_sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj \
+            --configuration Release --no-build -- \
+            --filter "*FSM_IntegerStringComparisonBenchmark*" \
+            --job Dry --exporters csv
+          python3 scripts/build_executive_report.py \
+            --results-dir BenchmarkDotNet.Artifacts/results \
+            --output /tmp/fsm-benchmark-smoke-report.json \
+            --source-sha "$FSM_API_SHA" \
+            --harness-sha "$HARNESS_SHA" \
+            --run-id "$RUN_ID" \
+            --run-attempt "$RUN_ATTEMPT"
