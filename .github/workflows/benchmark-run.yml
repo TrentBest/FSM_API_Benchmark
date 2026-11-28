@@ -64,6 +64,9 @@ jobs:
           dotnet restore FSM_Benchmark/FSM_Benchmark.csproj
           dotnet build FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-restore
 
+      - name: Test executive report parser
+        run: python3 -m unittest discover -s tests -p "test_*.py"
+
       - name: Verify matched runtime correctness
         run: dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build -- --validate
 
