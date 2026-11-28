@@ -74,26 +74,43 @@ public class FSM_IntegerStringComparisonBenchmark
     /// not a claim about an otherwise idle processor.
     /// </summary>
     [Benchmark(Baseline = true)]
-    public void ApplicationLogicBaseline()
+    public int ApplicationLogicBaseline()
     {
         ApplicationUpdate(_applicationContext);
         if (_applicationState == 0 && ApplicationToB(_applicationContext))
             _applicationState = 1;
         else if (_applicationState == 1 && ApplicationToA(_applicationContext))
             _applicationState = 0;
+        return _applicationContext.Counter + _applicationState;
     }
 
     [Benchmark]
-    public void IntegerScheduledTick() => IntegerFsmApi.Interaction.Update(_integerGroup);
+    public int IntegerScheduledTick()
+    {
+        IntegerFsmApi.Interaction.Update(_integerGroup);
+        return _integerContext.Counter;
+    }
 
     [Benchmark]
-    public void StringScheduledTick() => StringFsmApi.Interaction.Update(_stringGroup);
+    public int StringScheduledTick()
+    {
+        StringFsmApi.Interaction.Update(_stringGroup);
+        return _stringContext.Counter;
+    }
 
     [Benchmark]
-    public void IntegerHandleUpdate() => _integerHandle.Update();
+    public int IntegerHandleUpdate()
+    {
+        _integerHandle.Update();
+        return _integerContext.Counter;
+    }
 
     [Benchmark]
-    public void StringHandleUpdate() => _stringHandle.Update();
+    public int StringHandleUpdate()
+    {
+        _stringHandle.Update();
+        return _stringContext.Counter;
+    }
 
     public static void ValidateEquivalentExecution()
     {
