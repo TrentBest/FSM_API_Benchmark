@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using System;
-using TheSingularityWorkshop.FSM_API;
+using FsmApi = TheSingularityWorkshop.FSM_API.FsmApi;
 
 namespace FSM_Benchmark
 {
@@ -27,9 +27,9 @@ namespace FSM_Benchmark
             _context = new DummyContext();
 
             // Define a multi-state FSM to test string comparison performance during transitions
-            if (!FSM_API.Interaction.Exists(FsmName, ProcessingGroup))
+            if (!FsmApi.Interaction.Exists(FsmName, ProcessingGroup))
             {
-                FSM_API.Create.CreateFiniteStateMachine(FsmName, processingGroup: ProcessingGroup, processRate: 1)
+                FsmApi.Create.CreateFiniteStateMachine(FsmName, processingGroup: ProcessingGroup, processRate: 1)
                     .State("StateA", OnEnterA, OnUpdateA, null)
                     .State("StateB", OnEnterB, OnUpdateB, null)
                     .WithInitialState("StateA")
@@ -38,14 +38,14 @@ namespace FSM_Benchmark
                     .BuildDefinition();
             }
 
-            FSM_API.Create.CreateInstance(FsmName, _context, ProcessingGroup);
+            FsmApi.Create.CreateInstance(FsmName, _context, ProcessingGroup);
         }
 
         [Benchmark]
         public void SingleFsmUpdateTick()
         {
             // Ticks the FSM state machine once (evaluating string transitions and delegate callbacks)
-            FSM_API.Interaction.Update(ProcessingGroup);
+            FsmApi.Interaction.Update(ProcessingGroup);
         }
 
         // --- State Delegates ---
