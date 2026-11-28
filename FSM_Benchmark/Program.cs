@@ -2,6 +2,7 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // -----------------------------------------------------------------------
 
+using System;
 using BenchmarkDotNet.Running;
 
 namespace FSM_Benchmark
