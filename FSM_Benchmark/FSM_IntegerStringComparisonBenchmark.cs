@@ -95,6 +95,56 @@ public class FSM_IntegerStringComparisonBenchmark
     [Benchmark]
     public void StringHandleUpdate() => _stringHandle.Update();
 
+    public static void ValidateEquivalentExecution()
+    {
+        const int iterations = 1000;
+        var benchmark = new FSM_IntegerStringComparisonBenchmark();
+        benchmark.Setup();
+
+        for (var i = 0; i < iterations; i++)
+        {
+            benchmark.ApplicationLogicBaseline();
+            benchmark.IntegerHandleUpdate();
+            benchmark.StringHandleUpdate();
+        }
+
+        benchmark.AssertEquivalent("direct handle update", iterations);
+        if (benchmark._stringHandle.CurrentState != "StateA" ||
+            benchmark._integerHandle.CurrentStateID != 0 ||
+            benchmark._applicationState != 0)
+        {
+            throw new InvalidOperationException("Direct handle updates did not return all implementations to the same initial state.");
+        }
+
+        for (var i = 0; i < iterations; i++)
+        {
+            benchmark.ApplicationLogicBaseline();
+            benchmark.IntegerScheduledTick();
+            benchmark.StringScheduledTick();
+        }
+
+        benchmark.AssertEquivalent("scheduled group update", iterations * 2);
+        if (benchmark._stringHandle.CurrentState != "StateA" ||
+            benchmark._integerHandle.CurrentStateID != 0 ||
+            benchmark._applicationState != 0)
+        {
+            throw new InvalidOperationException("Scheduled updates did not return all implementations to the same initial state.");
+        }
+
+        Console.WriteLine($"PASS: application, integer-backed, and string-backed paths produced equivalent results across {iterations} direct and {iterations} scheduled updates.");
+    }
+
+    private void AssertEquivalent(string workload, int expectedOperations)
+    {
+        if (_applicationContext.Counter != expectedOperations ||
+            _integerContext.Counter != expectedOperations ||
+            _stringContext.Counter != expectedOperations)
+        {
+            throw new InvalidOperationException(
+                $"{workload} diverged: application={_applicationContext.Counter}, integer={_integerContext.Counter}, string={_stringContext.Counter}, expected={expectedOperations}.");
+        }
+    }
+
     private static void Increment(IStateContext context)
     {
         if (context is BenchmarkContext benchmarkContext)
