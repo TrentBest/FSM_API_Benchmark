@@ -72,7 +72,7 @@ jobs:
           dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj
           --configuration Release --no-build --
           --filter "*FSM_IntegerStringComparisonBenchmark*"
-          --exporters csv
+
 
       - name: Build executive report from measured CSV
         env:
