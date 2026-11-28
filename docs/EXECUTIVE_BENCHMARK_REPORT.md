@@ -30,7 +30,7 @@ The state callback, transition predicate, process rate, and one-tick workload ar
 | Integer runtime overhead | Integer-backed total minus application baseline; also shown as a percentage of baseline |
 | String runtime overhead | String-backed total minus application baseline; also shown as a percentage of baseline |
 | String penalty over integer | String-backed total minus integer-backed total; also shown as a percentage of integer-backed time |
-| Measurement spread | BenchmarkDotNet error and standard deviation |
+| Measurement spread | BenchmarkDotNet standard deviation and error (half of the 99.9% confidence interval) |
 | Allocation | Bytes allocated per operation, when MemoryDiagnoser reports a value |
 | Provenance | FSM_API source SHA, harness SHA, workflow run/attempt, runtime, OS, architecture, processor |
 
@@ -41,7 +41,7 @@ The page presents two rows: direct instance-handle update and scheduled processi
 - The application baseline and all four runtime lanes must be present in the same exported BenchmarkDotNet result set.
 - A missing, duplicated, malformed, or non-positive mean rejects report generation.
 - The parser does not combine measurements from separate runs or machines.
-- The report includes exact source and harness commit SHAs plus workflow run/attempt.
+- The report includes exact source and harness commit SHAs plus workflow run/attempt, .NET runtime and SDK, CPU model, logical processor and physical core counts, operating system, architecture, and the shared GitHub-hosted runner designation.
 - Raw BenchmarkDotNet CSV files are uploaded as a separate evidence artifact.
 - The static page renders no numbers when the report is absent, malformed, or not marked measured.
 
@@ -49,7 +49,7 @@ The page presents two rows: direct instance-handle update and scheduled processi
 
 The published FSM_API 1.0.13 release line does not contain the integer-backed API. The benchmark harness therefore pins FSM_API development as a Git submodule and uses a project reference to that source. The actual gitlink commit is checked during CI and recorded in every measured report. This is a source-development comparison, not a comparison against the 1.0.13 NuGet binary.
 
-The harness and workflows target .NET 10.
+The harness and workflows target .NET 10. The current hosted-runner result is comparative evidence for this exact environment, not a production performance guarantee; repeat on pinned dedicated hardware before making SLA or contractual claims.
 
 ## Relationship to CiAi
 
