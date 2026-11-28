@@ -2,15 +2,21 @@ name: Benchmark Build
 
 on:
   push:
-    branches:
-      - benchmark-complete
-  pull_request:
-    branches:
-      - development
+    branches: [development]
     paths:
       - "FSM_Benchmark/**"
+      - "external/FSM_API/**"
+      - ".gitmodules"
+      - "global.json"
       - ".github/workflows/benchmark-build.yml"
-      - "Documentation/BuildValidation.md"
+  pull_request:
+    branches: [development]
+    paths:
+      - "FSM_Benchmark/**"
+      - "external/FSM_API/**"
+      - ".gitmodules"
+      - "global.json"
+      - ".github/workflows/benchmark-build.yml"
   workflow_dispatch:
 
 permissions:
@@ -22,19 +28,34 @@ concurrency:
 
 jobs:
   build:
-    name: Build benchmark suite (.NET 8)
+    name: Build benchmark suite (.NET 10)
     runs-on: ubuntu-24.04
     steps:
-      - name: Check out source
-        uses: actions/checkout@v6
-
-      - name: Set up .NET 8 SDK
-        uses: actions/setup-dotnet@v5
+      - name: Check out source and pinned FSM_API dependency
+        uses: actions/checkout@v7
         with:
-          dotnet-version: 8.0.x
+          submodules: recursive
+          persist-credentials: false
 
-      - name: Show SDK
-        run: dotnet --info
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify source dependency pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(git ls-tree HEAD external/FSM_API | awk '{print $3}')"
+          actual="$(git -C external/FSM_API rev-parse HEAD)"
+          test -n "$expected"
+          test "$actual" = "$expected"
+          echo "Verified FSM_API source dependency: $actual"
+
+      - name: Show SDK and dependency revision
+        run: |
+          dotnet --info
+          git -C external/FSM_API log -1 --format='%H %s'
 
       - name: Restore
         run: dotnet restore FSM_Benchmark/FSM_Benchmark.csproj
