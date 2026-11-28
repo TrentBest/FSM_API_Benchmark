@@ -48,9 +48,9 @@
   if(m.applicationLogic.meanNs<1)throw new Error("The application baseline is below the 1 ns plausibility floor; likely optimizer elimination. No performance claim is shown.");
   status.textContent="Measured · exact-source report";status.classList.add("measured");
   table.className="table-wrap";
-  const spread=(lane)=>\`\${cell(lane.standardDeviationNs)} / \${cell(lane.errorNs)}\`;
-  const row=(label,intKey,strKey,derived)=>\`<tr><td><strong>\${label}</strong></td><td>\${cell(m.applicationLogic.meanNs)}</td><td>\${cell(m[intKey].meanNs)}</td><td>\${cell(m[strKey].meanNs)}</td><td>\${cell(derived.integerRuntimeOverheadNs)}<br><small>\${fmt(derived.integerRuntimeOverheadPercent)}%</small></td><td>\${cell(derived.stringRuntimeOverheadNs)}<br><small>\${fmt(derived.stringRuntimeOverheadPercent)}%</small></td><td>\${cell(derived.stringPenaltyOverIntegerNs)}<br><small>\${fmt(derived.stringPenaltyOverIntegerPercent)}%</small></td><td>\${spread(m[intKey])}</td><td>\${spread(m[strKey])}</td><td>\${cell(m[intKey].allocatedBytesPerOperation," B/op")}</td><td>\${cell(m[strKey].allocatedBytesPerOperation," B/op")}</td></tr>\`;
-  table.innerHTML=\`<table><thead><tr><th>Workload</th><th>Application<br><small>logic baseline</small></th><th>Integer<br><small>total time</small></th><th>String<br><small>total time</small></th><th>Integer overhead<br><small>vs baseline</small></th><th>String overhead<br><small>vs baseline</small></th><th>String penalty<br><small>vs integer</small></th><th>Integer variability<br><small>StdDev / 99.9% CI</small></th><th>String variability<br><small>StdDev / 99.9% CI</small></th><th>Integer alloc<br><small>B/op</small></th><th>String alloc<br><small>B/op</small></th></tr></thead><tbody>\${row("Direct instance update","integerHandle","stringHandle",d.instanceUpdate)}\${row("Scheduled group update","integerScheduled","stringScheduled",d.scheduledGroupUpdate)}</tbody></table>\`;
+  const spread=(lane)=>`${cell(lane.standardDeviationNs)} / ${cell(lane.errorNs)}`;
+  const row=(label,intKey,strKey,derived)=>`<tr><td><strong>${label}</strong></td><td>${cell(m.applicationLogic.meanNs)}</td><td>${cell(m[intKey].meanNs)}</td><td>${cell(m[strKey].meanNs)}</td><td>${cell(derived.integerRuntimeOverheadNs)}<br><small>${fmt(derived.integerRuntimeOverheadPercent)}%</small></td><td>${cell(derived.stringRuntimeOverheadNs)}<br><small>${fmt(derived.stringRuntimeOverheadPercent)}%</small></td><td>${cell(derived.stringPenaltyOverIntegerNs)}<br><small>${fmt(derived.stringPenaltyOverIntegerPercent)}%</small></td><td>${spread(m[intKey])}</td><td>${spread(m[strKey])}</td><td>${cell(m[intKey].allocatedBytesPerOperation," B/op")}</td><td>${cell(m[strKey].allocatedBytesPerOperation," B/op")}</td></tr>`;
+  table.innerHTML=`<table><thead><tr><th>Workload</th><th>Application<br><small>logic baseline</small></th><th>Integer<br><small>total time</small></th><th>String<br><small>total time</small></th><th>Integer overhead<br><small>vs baseline</small></th><th>String overhead<br><small>vs baseline</small></th><th>String penalty<br><small>vs integer</small></th><th>Integer variability<br><small>StdDev / 99.9% CI</small></th><th>String variability<br><small>StdDev / 99.9% CI</small></th><th>Integer alloc<br><small>B/op</small></th><th>String alloc<br><small>B/op</small></th></tr></thead><tbody>${row("Direct instance update","integerHandle","stringHandle",d.instanceUpdate)}${row("Scheduled group update","integerScheduled","stringScheduled",d.scheduledGroupUpdate)}</tbody></table>`;
   plain.hidden=false;plain.textContent=[report.interpretation?.summary,report.interpretation?.caveat].filter(Boolean).join(" ");
   meta.hidden=false;
   const items=[
@@ -64,13 +64,13 @@
    ["Architecture",report.environment?.architecture||"—"],
    ["Generated",report.generatedUtc||"—"]
   ];
-  meta.innerHTML=items.map(([k,v])=>\`<div><small>\${k}</small><strong>\${v}</strong></div>\`).join("");
+  meta.innerHTML=items.map(([k,v])=>`<div><small>${k}</small><strong>${v}</strong></div>`).join("");
   const sourceSha=report.source?.commitSha||"",harnessSha=report.source?.harnessCommitSha||"",runId=report.source?.workflowRunId;
   const links=[];
-  if(/^[0-9a-f]{40}$/i.test(sourceSha))links.push(["FSM_API source",\`https://github.com/TrentBest/FSM_API/commit/\${sourceSha}\`,sourceSha.slice(0,12)]);
-  if(/^[0-9a-f]{40}$/i.test(harnessSha))links.push(["Harness source",\`https://github.com/TrentBest/FSM_API_Benchmark/commit/\${harnessSha}\`,harnessSha.slice(0,12)]);
-  if(Number.isSafeInteger(runId)&&runId>0)links.push(["Benchmark run",\`https://github.com/TrentBest/FSM_API_Benchmark/actions/runs/\${runId}\`,String(runId)]);
-  meta.innerHTML+=links.map(([k,url,v])=>\`<div><small>\${k}</small><strong><a href="\${url}" target="_blank" rel="noopener">\${v}</a></strong></div>\`).join("");
+  if(/^[0-9a-f]{40}$/i.test(sourceSha))links.push(["FSM_API source",`https://github.com/TrentBest/FSM_API/commit/${sourceSha}`,sourceSha.slice(0,12)]);
+  if(/^[0-9a-f]{40}$/i.test(harnessSha))links.push(["Harness source",`https://github.com/TrentBest/FSM_API_Benchmark/commit/${harnessSha}`,harnessSha.slice(0,12)]);
+  if(Number.isSafeInteger(runId)&&runId>0)links.push(["Benchmark run",`https://github.com/TrentBest/FSM_API_Benchmark/actions/runs/${runId}`,String(runId)]);
+  meta.innerHTML+=links.map(([k,url,v])=>`<div><small>${k}</small><strong><a href="${url}" target="_blank" rel="noopener">${v}</a></strong></div>`).join("");
  }catch(error){table.textContent="The report could not be validated: "+error.message+". No performance claim is shown.";}
 })();
 </script>
