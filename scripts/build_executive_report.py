@@ -14,8 +14,10 @@ from pathlib import Path
 
 EXPECTED_METHODS = {
     "ApplicationLogicBaseline": "applicationLogic",
-    "IntegerBackedTick": "integerBacked",
-    "StringBackedTick": "stringBacked",
+    "IntegerHandleUpdate": "integerHandle",
+    "StringHandleUpdate": "stringHandle",
+    "IntegerScheduledTick": "integerScheduled",
+    "StringScheduledTick": "stringScheduled",
 }
 TIME_UNITS_TO_NS = {
     "ns": 1.0,
@@ -80,6 +82,21 @@ def percentage(delta: float, baseline: float) -> float | None:
     return (delta / baseline) * 100.0 if baseline > 0 else None
 
 
+def derive(integer: float, string: float, baseline: float) -> dict[str, float | None]:
+    integer_overhead = integer - baseline
+    string_overhead = string - baseline
+    string_penalty = string - integer
+    return {
+        "integerRuntimeOverheadNs": integer_overhead,
+        "integerRuntimeOverheadPercent": percentage(integer_overhead, baseline),
+        "stringRuntimeOverheadNs": string_overhead,
+        "stringRuntimeOverheadPercent": percentage(string_overhead, baseline),
+        "stringPenaltyOverIntegerNs": string_penalty,
+        "stringPenaltyOverIntegerPercent": percentage(string_penalty, integer),
+        "stringToIntegerRatio": string / integer,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--results-dir", required=True, type=Path)
@@ -98,13 +115,17 @@ def main() -> None:
 
     metrics = read_measurements(args.results_dir)
     baseline = metrics["applicationLogic"]["meanNs"]
-    integer = metrics["integerBacked"]["meanNs"]
-    string = metrics["stringBacked"]["meanNs"]
-    assert baseline is not None and integer is not None and string is not None
+    integer_handle = metrics["integerHandle"]["meanNs"]
+    string_handle = metrics["stringHandle"]["meanNs"]
+    integer_scheduled = metrics["integerScheduled"]["meanNs"]
+    string_scheduled = metrics["stringScheduled"]["meanNs"]
+    assert all(value is not None for value in (baseline, integer_handle, string_handle, integer_scheduled, string_scheduled))
+    baseline = float(baseline)
+    integer_handle = float(integer_handle)
+    string_handle = float(string_handle)
+    integer_scheduled = float(integer_scheduled)
+    string_scheduled = float(string_scheduled)
 
-    integer_overhead = integer - baseline
-    string_overhead = string - baseline
-    string_penalty = string - integer
     report = {
         "schema": "fsm-benchmark.executive-report.v1",
         "status": "measured",
@@ -123,30 +144,36 @@ def main() -> None:
             "architecture": platform.machine(),
             "processor": platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", "not reported by runner"),
         },
-        "workload": {
-            "identity": "one active two-state FSM update",
-            "description": "Each tick increments the same counter and evaluates the same parity transition. Setup is outside the measured operation.",
-            "baselineDescription": "The same application update and transition decision executed directly through delegates, without an FSM scheduler, definition lookup, state lookup, or handle lifecycle.",
+        "workloads": {
+            "instanceUpdate": {
+                "identity": "direct handle update",
+                "description": "The same two-state machine update invoked directly on the instance handle; excludes processing-group scheduling and group lookup.",
+            },
+            "scheduledGroupUpdate": {
+                "identity": "scheduled processing-group update",
+                "description": "The same two-state machine advanced through the public processing-group update API; includes scheduler/group-level runtime costs.",
+            },
+            "baseline": {
+                "identity": "application logic only",
+                "description": "The same counter update and parity decision executed directly through delegates without an FSM scheduler, definition lookup, state lookup, or handle lifecycle.",
+            },
         },
         "measurements": metrics,
         "derived": {
-            "integerRuntimeOverheadNs": integer_overhead,
-            "integerRuntimeOverheadPercent": percentage(integer_overhead, baseline),
-            "stringRuntimeOverheadNs": string_overhead,
-            "stringRuntimeOverheadPercent": percentage(string_overhead, baseline),
-            "stringPenaltyOverIntegerNs": string_penalty,
-            "stringPenaltyOverIntegerPercent": percentage(string_penalty, integer),
-            "stringToIntegerRatio": string / integer,
+            "instanceUpdate": derive(integer_handle, string_handle, baseline),
+            "scheduledGroupUpdate": derive(integer_scheduled, string_scheduled, baseline),
         },
         "interpretation": {
             "status": "measured",
             "summary": (
-                f"At this workload and on this runner, the integer-backed tick averaged {integer:.3f} ns "
-                f"and the string-backed tick averaged {string:.3f} ns. The application-logic-only baseline "
-                f"averaged {baseline:.3f} ns. The string-backed path therefore cost {string_penalty:+.3f} ns "
-                f"per operation relative to the integer-backed path."
+                f"The application-logic-only baseline averaged {baseline:.3f} ns. For a direct instance update, "
+                f"integer-backed execution averaged {integer_handle:.3f} ns and string-backed execution "
+                f"averaged {string_handle:.3f} ns (string difference: {string_handle - integer_handle:+.3f} ns). "
+                f"Through the scheduled group API, integer-backed execution averaged {integer_scheduled:.3f} ns "
+                f"and string-backed execution averaged {string_scheduled:.3f} ns "
+                f"(string difference: {string_scheduled - integer_scheduled:+.3f} ns)."
             ),
-            "caveat": "These are measurements of this specific workload and runner, not universal processor constants or a guarantee for every application.",
+            "caveat": "These are measurements of two specific public execution paths on this runner, not universal processor constants or a guarantee for every application. The scheduled path includes each API's scheduler and diagnostics implementation; the direct-handle path is the closer comparison of per-instance execution.",
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
