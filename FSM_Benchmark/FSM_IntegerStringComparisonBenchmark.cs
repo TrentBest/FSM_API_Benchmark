@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using BenchmarkDotNet.Attributes;
 using TheSingularityWorkshop.FSM_API;
 using IntegerFsmApi = TheSingularityWorkshop.FSM_API.IntegerBacked.FsmApi;
@@ -14,10 +15,11 @@ namespace FSM_Benchmark;
 [BenchmarkCategory("Runtime representation")]
 public class FSM_IntegerStringComparisonBenchmark
 {
-    private const string StringGroup = "IntegerStringComparison.Group";
-    private const string StringDefinition = "IntegerStringComparison.FSM";
-    private const int IntegerGroup = 2;
-    private const int IntegerDefinition = 2;
+    private static int _nextIdentity;
+    private string _stringGroup;
+    private string _stringDefinition;
+    private int _integerGroup;
+    private int _integerDefinition;
 
     private sealed class BenchmarkContext : IStateContext
     {
@@ -40,23 +42,29 @@ public class FSM_IntegerStringComparisonBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        StringFsmApi.Create.CreateFiniteStateMachine(StringDefinition, processRate: 1, processingGroup: StringGroup)
+        var identity = Interlocked.Increment(ref _nextIdentity);
+        _stringGroup = $"IntegerStringComparison.Group.{identity}";
+        _stringDefinition = $"IntegerStringComparison.FSM.{identity}";
+        _integerGroup = identity;
+        _integerDefinition = identity;
+
+        StringFsmApi.Create.CreateFiniteStateMachine(_stringDefinition, processRate: 1, processingGroup: _stringGroup)
             .State("StateA", null, Increment, null)
             .State("StateB", null, Increment, null)
             .WithInitialState("StateA")
             .Transition("StateA", "StateB", IsOdd)
             .Transition("StateB", "StateA", IsEven)
             .BuildDefinition();
-        _stringHandle = StringFsmApi.Create.CreateInstance(StringDefinition, _stringContext, StringGroup);
+        _stringHandle = StringFsmApi.Create.CreateInstance(_stringDefinition, _stringContext, _stringGroup);
 
-        IntegerFsmApi.Create.CreateFiniteStateMachine(IntegerDefinition, processRate: 1, processingGroupID: IntegerGroup)
+        IntegerFsmApi.Create.CreateFiniteStateMachine(_integerDefinition, processRate: 1, processingGroupID: _integerGroup)
             .State(0, null, Increment, null)
             .State(1, null, Increment, null)
             .WithInitialState(0)
             .Transition(0, 1, IsOdd)
             .Transition(1, 0, IsEven)
             .BuildDefinition();
-        _integerHandle = IntegerFsmApi.Create.CreateInstance(IntegerDefinition, _integerContext);
+        _integerHandle = IntegerFsmApi.Create.CreateInstance(_integerDefinition, _integerContext);
     }
 
     /// <summary>
@@ -75,10 +83,10 @@ public class FSM_IntegerStringComparisonBenchmark
     }
 
     [Benchmark]
-    public void IntegerScheduledTick() => IntegerFsmApi.Interaction.Update(IntegerGroup);
+    public void IntegerScheduledTick() => IntegerFsmApi.Interaction.Update(_integerGroup);
 
     [Benchmark]
-    public void StringScheduledTick() => StringFsmApi.Interaction.Update(StringGroup);
+    public void StringScheduledTick() => StringFsmApi.Interaction.Update(_stringGroup);
 
     [Benchmark]
     public void IntegerHandleUpdate() => _integerHandle.Update();
