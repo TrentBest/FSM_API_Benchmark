@@ -73,3 +73,10 @@ jobs:
 
       - name: Build Release
         run: dotnet build FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-restore
+
+      - name: Smoke-run matched runtime paths (BenchmarkDotNet Dry job)
+        run: >-
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj
+          --configuration Release --no-build --
+          --filter "*FSM_IntegerStringComparisonBenchmark*"
+          --job Dry
