@@ -22,7 +22,7 @@ class ExecutiveReportParserTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)
             (folder / "run-report-github.md").write_text(
-                "BenchmarkDotNet v0.15.2\\n  DefaultJob : .NET 10.0.15, X64 RyuJIT\\n",
+                "BenchmarkDotNet v0.15.2\n  DefaultJob : .NET 10.0.15, X64 RyuJIT\n",
                 encoding="utf-8",
             )
             runtime, _ = REPORT.dotnet_runtime_details(folder)
@@ -31,8 +31,8 @@ class ExecutiveReportParserTests(unittest.TestCase):
     def test_rejects_inconsistent_benchmarkdotnet_runtimes(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)
-            (folder / "a-report-github.md").write_text("  DefaultJob : .NET 10.0.15\\n", encoding="utf-8")
-            (folder / "b-report-github.md").write_text("  DefaultJob : .NET 10.0.16\\n", encoding="utf-8")
+            (folder / "a-report-github.md").write_text("  DefaultJob : .NET 10.0.15\n", encoding="utf-8")
+            (folder / "b-report-github.md").write_text("  DefaultJob : .NET 10.0.16\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "exactly one consistent"):
                 REPORT.dotnet_runtime_details(folder)
 
