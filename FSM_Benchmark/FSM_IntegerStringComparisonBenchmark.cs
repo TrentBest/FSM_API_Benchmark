@@ -61,7 +61,7 @@ public class FSM_IntegerStringComparisonBenchmark
     /// definition lookup, state lookup, or handle lifecycle. This is the application-logic floor,
     /// not a claim about an otherwise idle processor.
     /// </summary>
-    [Benchmark(Baseline = true, Description = "Application logic only")]
+    [Benchmark(Baseline = true)]
     public void ApplicationLogicBaseline()
     {
         ApplicationUpdate(_applicationContext);
@@ -71,10 +71,10 @@ public class FSM_IntegerStringComparisonBenchmark
             _applicationState = 0;
     }
 
-    [Benchmark(Description = "Integer-backed FSM tick")]
+    [Benchmark]
     public void IntegerBackedTick() => IntegerFsmApi.Interaction.Update(IntegerGroup);
 
-    [Benchmark(Description = "String-backed FSM tick")]
+    [Benchmark]
     public void StringBackedTick() => StringFsmApi.Interaction.Update(StringGroup);
 
     private static void Increment(IStateContext context)
