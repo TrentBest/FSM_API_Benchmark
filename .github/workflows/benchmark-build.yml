@@ -75,6 +75,14 @@ jobs:
             --configuration Release --no-build -- \
             --filter "*FSM_IntegerStringComparisonBenchmark*" \
             --job Dry
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj \
+            --configuration Release --no-build -- \
+            --filter "*FSM_IntegerRuntimeDefinitionMatrixBenchmarks*" \
+            --job Dry
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj \
+            --configuration Release --no-build -- \
+            --filter "*FSM_IntegerSparse*IdentityBenchmarks*" \
+            --job Dry
           python3 scripts/build_executive_report.py \
             --results-dir BenchmarkDotNet.Artifacts/results \
             --output /tmp/fsm-benchmark-smoke-report.json \
