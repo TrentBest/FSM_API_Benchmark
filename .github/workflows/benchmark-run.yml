@@ -1,0 +1,103 @@
+name: Integer vs String Benchmark Evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fsm-api-benchmark-evidence
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    name: Run matched BenchmarkDotNet workload
+    if: github.ref == 'refs/heads/development'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require trusted development workflow revision
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          test "$WORKFLOW_REF" = "refs/heads/development"
+
+      - name: Check out benchmark harness and pinned FSM_API source
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify exact source dependency
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(git ls-tree HEAD external/FSM_API | awk '{print $3}')"
+          actual="$(git -C external/FSM_API rev-parse HEAD)"
+          test -n "$expected"
+          test "$actual" = "$expected"
+          echo "fsm_api_sha=$actual" >> "$GITHUB_OUTPUT"
+          echo "harness_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Verified FSM_API=$actual"
+
+      - name: Restore and build Release
+        run: |
+          dotnet restore FSM_Benchmark/FSM_Benchmark.csproj
+          dotnet build FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-restore
+
+      - name: Run matched integer/string/application baseline
+        run: >-
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj
+          --configuration Release --no-build --
+          --filter "*FSM_IntegerStringComparisonBenchmark*"
+          --exporters csv
+
+      - name: Build executive report from measured CSV
+        env:
+          FSM_API_SHA: ${{ steps.source.outputs.fsm_api_sha }}
+          HARNESS_SHA: ${{ steps.source.outputs.harness_sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          mkdir -p _site/data
+          cp site/index.html _site/index.html
+          python3 scripts/build_executive_report.py \
+            --results-dir BenchmarkDotNet.Artifacts/results \
+            --output _site/data/benchmark-summary.json \
+            --source-sha "$FSM_API_SHA" \
+            --harness-sha "$HARNESS_SHA" \
+            --run-id "$RUN_ID" \
+            --run-attempt "$RUN_ATTEMPT"
+          python3 -m json.tool _site/data/benchmark-summary.json >/dev/null
+
+      - name: Upload raw benchmark and executive evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: fsm-api-benchmark-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            BenchmarkDotNet.Artifacts/results/**
+            _site/data/benchmark-summary.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload measured Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Publish measured report through CiAi
+    if: github.ref == 'refs/heads/development'
+    needs: benchmark
+    permissions:
+      pages: write
+      id-token: write
+    uses: TrentBest/TheSingularityWorkshop.CiAi/.github/workflows/deploy-pages.yml@5083c452b555d7645dd0c8ab01d76008026da436
