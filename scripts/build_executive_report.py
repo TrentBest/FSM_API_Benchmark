@@ -78,6 +78,8 @@ def read_measurements(results_dir: Path) -> dict[str, dict[str, float | None]]:
     for lane, metrics in rows.items():
         if metrics["meanNs"] is None or metrics["meanNs"] <= 0:
             raise ValueError(f"{lane} has no valid positive mean measurement.")
+    if rows["applicationLogic"]["meanNs"] < 1.0:
+        raise ValueError("Application-logic baseline is below 1 ns; this workload includes observable delegate calls and state mutation, so a sub-nanosecond result indicates likely dead-code elimination.")
     return rows
 
 
