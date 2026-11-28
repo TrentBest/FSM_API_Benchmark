@@ -28,6 +28,8 @@ public class FSM_IntegerStringComparisonBenchmark
     private readonly BenchmarkContext _stringContext = new();
     private readonly BenchmarkContext _integerContext = new();
     private readonly BenchmarkContext _applicationContext = new();
+    private TheSingularityWorkshop.FSM_API.FSMHandle? _stringHandle;
+    private TheSingularityWorkshop.FSM_API.IntegerBacked.FSMHandleInt? _integerHandle;
     private int _applicationState;
 
     private static readonly Action<BenchmarkContext> ApplicationUpdate = context => context.Counter++;
@@ -44,7 +46,7 @@ public class FSM_IntegerStringComparisonBenchmark
             .Transition("StateA", "StateB", IsOdd)
             .Transition("StateB", "StateA", IsEven)
             .BuildDefinition();
-        StringFsmApi.Create.CreateInstance(StringDefinition, _stringContext, StringGroup);
+        _stringHandle = StringFsmApi.Create.CreateInstance(StringDefinition, _stringContext, StringGroup);
 
         IntegerFsmApi.Create.CreateFiniteStateMachine(IntegerDefinition, processRate: 1, processingGroupID: IntegerGroup)
             .State(0, null, Increment, null)
@@ -53,7 +55,7 @@ public class FSM_IntegerStringComparisonBenchmark
             .Transition(0, 1, IsOdd)
             .Transition(1, 0, IsEven)
             .BuildDefinition();
-        IntegerFsmApi.Create.CreateInstance(IntegerDefinition, _integerContext);
+        _integerHandle = IntegerFsmApi.Create.CreateInstance(IntegerDefinition, _integerContext);
     }
 
     /// <summary>
@@ -72,10 +74,16 @@ public class FSM_IntegerStringComparisonBenchmark
     }
 
     [Benchmark]
-    public void IntegerBackedTick() => IntegerFsmApi.Interaction.Update(IntegerGroup);
+    public void IntegerScheduledTick() => IntegerFsmApi.Interaction.Update(IntegerGroup);
 
     [Benchmark]
-    public void StringBackedTick() => StringFsmApi.Interaction.Update(StringGroup);
+    public void StringScheduledTick() => StringFsmApi.Interaction.Update(StringGroup);
+
+    [Benchmark]
+    public void IntegerHandleUpdate() => _integerHandle!.Update();
+
+    [Benchmark]
+    public void StringHandleUpdate() => _stringHandle!.Update();
 
     private static void Increment(IStateContext context)
     {
