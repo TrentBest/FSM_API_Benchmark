@@ -70,6 +70,7 @@ jobs:
           set -euo pipefail
           FSM_API_SHA="$(git -C external/FSM_API rev-parse HEAD)"
           HARNESS_SHA="$(git rev-parse HEAD)"
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build -- --validate
           dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj \
             --configuration Release --no-build -- \
             --filter "*FSM_IntegerStringComparisonBenchmark*" \
