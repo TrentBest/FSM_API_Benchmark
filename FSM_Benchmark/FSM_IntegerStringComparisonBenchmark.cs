@@ -1,3 +1,4 @@
+using System;
 using BenchmarkDotNet.Attributes;
 using TheSingularityWorkshop.FSM_API;
 using IntegerFsmApi = TheSingularityWorkshop.FSM_API.IntegerBacked.FsmApi;
@@ -28,8 +29,8 @@ public class FSM_IntegerStringComparisonBenchmark
     private readonly BenchmarkContext _stringContext = new();
     private readonly BenchmarkContext _integerContext = new();
     private readonly BenchmarkContext _applicationContext = new();
-    private TheSingularityWorkshop.FSM_API.FSMHandle? _stringHandle;
-    private TheSingularityWorkshop.FSM_API.IntegerBacked.FSMHandleInt? _integerHandle;
+    private TheSingularityWorkshop.FSM_API.FSMHandle _stringHandle;
+    private TheSingularityWorkshop.FSM_API.IntegerBacked.FSMHandleInt _integerHandle;
     private int _applicationState;
 
     private static readonly Action<BenchmarkContext> ApplicationUpdate = context => context.Counter++;
@@ -80,10 +81,10 @@ public class FSM_IntegerStringComparisonBenchmark
     public void StringScheduledTick() => StringFsmApi.Interaction.Update(StringGroup);
 
     [Benchmark]
-    public void IntegerHandleUpdate() => _integerHandle!.Update();
+    public void IntegerHandleUpdate() => _integerHandle.Update();
 
     [Benchmark]
-    public void StringHandleUpdate() => _stringHandle!.Update();
+    public void StringHandleUpdate() => _stringHandle.Update();
 
     private static void Increment(IStateContext context)
     {
