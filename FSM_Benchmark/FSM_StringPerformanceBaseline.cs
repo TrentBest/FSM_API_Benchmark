@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using System;
+using TheSingularityWorkshop.FSM_API;
 using FsmApi = TheSingularityWorkshop.FSM_API.FsmApi;
 
 namespace FSM_Benchmark
