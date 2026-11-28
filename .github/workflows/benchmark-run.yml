@@ -1,6 +1,18 @@
 name: Integer vs String Benchmark Evidence
 
 on:
+  push:
+    branches: [development]
+    paths:
+      - "FSM_Benchmark/**"
+      - "external/FSM_API"
+      - ".gitmodules"
+      - "scripts/**"
+      - "tests/**"
+      - "site/**"
+      - "docs/**"
+      - "README.md"
+      - ".github/workflows/benchmark-run.yml"
   workflow_dispatch:
 
 permissions:
