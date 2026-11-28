@@ -1,0 +1,5 @@
+{
+  "schema": "fsm-benchmark.executive-report.v1",
+  "status": "awaiting-measurements",
+  "note": "No matched integer-backed, string-backed, and application-logic benchmark run has been published yet. This page intentionally displays no performance figures until all three lanes are measured together."
+}

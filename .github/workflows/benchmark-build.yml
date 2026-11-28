@@ -1,16 +1,18 @@
 name: Benchmark Build
 
 on:
-  push:
-    branches:
-      - benchmark-complete
   pull_request:
-    branches:
-      - development
+    branches: [development]
     paths:
       - "FSM_Benchmark/**"
+      - "external/FSM_API"
+      - ".gitmodules"
+      - "global.json"
+      - "scripts/**"
+      - "tests/**"
+      - "docs/**"
+      - "README.md"
       - ".github/workflows/benchmark-build.yml"
-      - "Documentation/BuildValidation.md"
   workflow_dispatch:
 
 permissions:
@@ -22,22 +24,61 @@ concurrency:
 
 jobs:
   build:
-    name: Build benchmark suite (.NET 8)
+    name: Build and smoke-test benchmark suite (.NET 10)
     runs-on: ubuntu-24.04
     steps:
-      - name: Check out source
-        uses: actions/checkout@v6
-
-      - name: Set up .NET 8 SDK
-        uses: actions/setup-dotnet@v5
+      - name: Check out source and pinned FSM_API dependency
+        uses: actions/checkout@v7
         with:
-          dotnet-version: 8.0.x
+          submodules: recursive
+          persist-credentials: false
 
-      - name: Show SDK
-        run: dotnet --info
+      - name: Set up .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify source dependency pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(git ls-tree HEAD external/FSM_API | awk '{print $3}')"
+          actual="$(git -C external/FSM_API rev-parse HEAD)"
+          test -n "$expected"
+          test "$actual" = "$expected"
+          echo "Verified FSM_API source dependency: $actual"
+
+      - name: Show SDK and dependency revision
+        run: |
+          dotnet --info
+          git -C external/FSM_API log -1 --format='%H %s'
+
+      - name: Test executive report parser
+        run: python3 -m unittest discover -s tests -p "test_*.py"
 
       - name: Restore
         run: dotnet restore FSM_Benchmark/FSM_Benchmark.csproj
 
       - name: Build Release
         run: dotnet build FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-restore
+
+      - name: Smoke-run and validate all five matched runtime paths
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          FSM_API_SHA="$(git -C external/FSM_API rev-parse HEAD)"
+          HARNESS_SHA="$(git rev-parse HEAD)"
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj --configuration Release --no-build -- --validate
+          dotnet run --project FSM_Benchmark/FSM_Benchmark.csproj \
+            --configuration Release --no-build -- \
+            --filter "*FSM_IntegerStringComparisonBenchmark*" \
+            --job Dry
+          python3 scripts/build_executive_report.py \
+            --results-dir BenchmarkDotNet.Artifacts/results \
+            --output /tmp/fsm-benchmark-smoke-report.json \
+            --source-sha "$FSM_API_SHA" \
+            --harness-sha "$HARNESS_SHA" \
+            --run-id "$RUN_ID" \
+            --run-attempt "$RUN_ATTEMPT"

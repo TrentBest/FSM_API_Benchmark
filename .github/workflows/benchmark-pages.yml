@@ -1,0 +1,31 @@
+name: Benchmark Site Validation
+
+on:
+  pull_request:
+    branches: [development]
+    paths:
+      - "site/**"
+      - "README.md"
+      - ".github/workflows/benchmark-pages.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate executive benchmark site
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out site source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Validate report data and page
+        run: |
+          set -euo pipefail
+          python3 -m json.tool site/data/benchmark-summary.json >/dev/null
+          test -s site/index.html
+          test -s site/data/benchmark-summary.json
+          grep -q 'fsm-benchmark.executive-report.v1' site/index.html
+          echo "PASS: executive site and report data are present and valid."

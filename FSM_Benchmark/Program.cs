@@ -2,6 +2,7 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 // -----------------------------------------------------------------------
 
+using System;
 using BenchmarkDotNet.Running;
 
 namespace FSM_Benchmark
@@ -10,7 +11,13 @@ namespace FSM_Benchmark
     {
         static void Main(string[] args)
         {
-            var _ = BenchmarkRunner.Run(typeof(Program).Assembly);
+            if (args.Length == 1 && string.Equals(args[0], "--validate", StringComparison.Ordinal))
+            {
+                FSM_IntegerStringComparisonBenchmark.ValidateEquivalentExecution();
+                return;
+            }
+
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
     }
 }
