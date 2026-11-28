@@ -57,13 +57,14 @@ public class FSM_IntegerStringComparisonBenchmark
             .BuildDefinition();
         _stringHandle = StringFsmApi.Create.CreateInstance(_stringDefinition, _stringContext, _stringGroup);
 
-        IntegerFsmApi.Create.CreateFiniteStateMachine(_integerDefinition, processRate: 1, processingGroupID: _integerGroup)
+        var integerDefinition = IntegerFsmApi.Create.CreateFiniteStateMachine(_integerDefinition, processRate: 1, processingGroupID: _integerGroup)
             .State(0, null, Increment, null)
             .State(1, null, Increment, null)
             .WithInitialState(0)
             .Transition(0, 1, IsOdd)
             .Transition(1, 0, IsEven)
             .BuildDefinition();
+        IntegerFsmApi.Create.RegisterDefinition(integerDefinition);
         _integerHandle = IntegerFsmApi.Create.CreateInstance(_integerDefinition, _integerContext);
     }
 
