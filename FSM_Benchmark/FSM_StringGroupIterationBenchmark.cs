@@ -1,7 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using System;
-using TheSingularityWorkshop.FSM_API;
+using FsmApi = TheSingularityWorkshop.FSM_API.FsmApi;
 
 namespace FSM_Benchmark
 {
@@ -30,9 +30,9 @@ namespace FSM_Benchmark
                 string groupName = $"Group_{i}";
                 string fsmName = $"FSM_{i}";
 
-                if (!FSM_API.Interaction.Exists(fsmName, groupName))
+                if (!FsmApi.Interaction.Exists(fsmName, groupName))
                 {
-                    FSM_API.Create.CreateFiniteStateMachine(fsmName, processingGroup: groupName, processRate: 1)
+                    FsmApi.Create.CreateFiniteStateMachine(fsmName, processingGroup: groupName, processRate: 1)
                         .State("StateA", null, ctx => { if (ctx is DummyContext d) d.Counter++; }, null)
                         .State("StateB", null, null, null)
                         .WithInitialState("StateA")
@@ -40,7 +40,7 @@ namespace FSM_Benchmark
                         .BuildDefinition();
                 }
 
-                FSM_API.Create.CreateInstance(fsmName, new DummyContext(), groupName);
+                FsmApi.Create.CreateInstance(fsmName, new DummyContext(), groupName);
             }
         }
 
@@ -50,7 +50,7 @@ namespace FSM_Benchmark
             // Forces the API to hash and look up strings repeatedly per tick
             for (int i = 0; i < ActiveProcessGroups; i++)
             {
-                FSM_API.Interaction.Update($"Group_{i}");
+                FsmApi.Interaction.Update($"Group_{i}");
             }
         }
     }
