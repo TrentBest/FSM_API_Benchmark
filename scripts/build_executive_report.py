@@ -98,16 +98,27 @@ def processor_details() -> tuple[str, int | None, int | None]:
     return processor, os.cpu_count(), physical_cores
 
 
-def dotnet_runtime_details() -> tuple[str, str | None]:
+def dotnet_runtime_details(results_dir: Path) -> tuple[str, str | None]:
+    # BenchmarkDotNet records the runtime that actually hosted each measured job.
+    # --list-runtimes can list older installed patch versions first, which may
+    # differ from the runtime selected by BenchmarkDotNet.
+    reported_runtimes: set[str] = set()
+    for report_path in results_dir.glob("*report-github.md"):
+        report = report_path.read_text(encoding="utf-8", errors="replace")
+        reported_runtimes.update(
+            f".NET {version}"
+            for version in re.findall(r"^\\s*DefaultJob\\s*:\\s*\\.NET\\s+(10\\.\\d+\\.\\d+)", report, re.MULTILINE)
+        )
+    if len(reported_runtimes) != 1:
+        raise ValueError(
+            "Expected exactly one consistent .NET 10 BenchmarkDotNet runtime "
+            f"across measured reports; found {sorted(reported_runtimes)}."
+        )
     try:
-        runtimes = subprocess.run(["dotnet", "--list-runtimes"], capture_output=True, text=True, check=True).stdout
-        match = re.search(r"Microsoft\.NETCore\.App\s+(10\.\S+)", runtimes)
-        runtime = f".NET {match.group(1)}" if match else ".NET 10"
         sdk = subprocess.run(["dotnet", "--version"], capture_output=True, text=True, check=True).stdout.strip()
-        return runtime, sdk or None
     except (OSError, subprocess.CalledProcessError):
-        return ".NET 10", None
-
+        sdk = None
+    return next(iter(reported_runtimes)), sdk or None
 
 def percentage(delta: float, baseline: float) -> float | None:
     return (delta / baseline) * 100.0 if baseline > 0 else None
@@ -158,7 +169,7 @@ def main() -> None:
     string_scheduled = float(string_scheduled)
 
     processor, logical_processors, physical_cores = processor_details()
-    runtime, sdk = dotnet_runtime_details()
+    runtime, sdk = dotnet_runtime_details(args.results_dir)
     report = {
         "schema": "fsm-benchmark.executive-report.v1",
         "status": "measured",
