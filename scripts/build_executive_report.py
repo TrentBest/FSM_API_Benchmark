@@ -9,6 +9,7 @@ import math
 import os
 import platform
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -83,6 +84,31 @@ def read_measurements(results_dir: Path) -> dict[str, dict[str, float | None]]:
     return rows
 
 
+def processor_details() -> tuple[str, int | None, int | None]:
+    cpuinfo_path = Path("/proc/cpuinfo")
+    try:
+        cpuinfo = cpuinfo_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        cpuinfo = ""
+    model_match = re.search(r"^model name\s*:\s*(.+)$", cpuinfo, re.MULTILINE)
+    processor = model_match.group(1).strip() if model_match else (platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", "not reported by runner"))
+    physical_ids = re.findall(r"^physical id\s*:\s*(\d+)\s*$", cpuinfo, re.MULTILINE)
+    core_ids = re.findall(r"^core id\s*:\s*(\d+)\s*$", cpuinfo, re.MULTILINE)
+    physical_cores = len(set(zip(physical_ids, core_ids))) if physical_ids and len(physical_ids) == len(core_ids) else None
+    return processor, os.cpu_count(), physical_cores
+
+
+def dotnet_runtime_details() -> tuple[str, str | None]:
+    try:
+        runtimes = subprocess.run(["dotnet", "--list-runtimes"], capture_output=True, text=True, check=True).stdout
+        match = re.search(r"Microsoft\.NETCore\.App\s+(10\.\S+)", runtimes)
+        runtime = f".NET {match.group(1)}" if match else ".NET 10"
+        sdk = subprocess.run(["dotnet", "--version"], capture_output=True, text=True, check=True).stdout.strip()
+        return runtime, sdk or None
+    except (OSError, subprocess.CalledProcessError):
+        return ".NET 10", None
+
+
 def percentage(delta: float, baseline: float) -> float | None:
     return (delta / baseline) * 100.0 if baseline > 0 else None
 
@@ -131,6 +157,8 @@ def main() -> None:
     integer_scheduled = float(integer_scheduled)
     string_scheduled = float(string_scheduled)
 
+    processor, logical_processors, physical_cores = processor_details()
+    runtime, sdk = dotnet_runtime_details()
     report = {
         "schema": "fsm-benchmark.executive-report.v1",
         "status": "measured",
@@ -144,10 +172,14 @@ def main() -> None:
             "workflowAttempt": args.run_attempt,
         },
         "environment": {
-            "runtime": ".NET 10",
+            "runtime": runtime,
+            "sdk": sdk,
+            "runner": "GitHub-hosted Actions runner (shared/virtualized)",
             "operatingSystem": platform.platform(),
             "architecture": platform.machine(),
-            "processor": platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", "not reported by runner"),
+            "processor": processor,
+            "logicalProcessorCount": logical_processors,
+            "physicalCoreCount": physical_cores,
         },
         "workloads": {
             "instanceUpdate": {
@@ -178,7 +210,7 @@ def main() -> None:
                 f"and string-backed execution averaged {string_scheduled:.3f} ns "
                 f"(string difference: {string_scheduled - integer_scheduled:+.3f} ns)."
             ),
-            "caveat": "These are measurements of two specific public execution paths on this runner, not universal processor constants or a guarantee for every application. The scheduled path includes each API's scheduler and diagnostics implementation; the direct-handle path is the closer comparison of per-instance execution.",
+            "caveat": "These are measurements of two specific public execution paths on a shared GitHub-hosted runner, not universal processor constants or a guarantee for every application. Repeat on pinned dedicated hardware before making an SLA or contractual performance claim. The scheduled path includes each API's scheduler and diagnostics implementation; the direct-handle path is the closer comparison of per-instance execution.",
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
