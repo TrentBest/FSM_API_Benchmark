@@ -8,6 +8,10 @@ on:
       - "external/FSM_API/**"
       - ".gitmodules"
       - "global.json"
+      - "scripts/**"
+      - "tests/**"
+      - "docs/**"
+      - "README.md"
       - ".github/workflows/benchmark-build.yml"
   pull_request:
     branches: [development]
