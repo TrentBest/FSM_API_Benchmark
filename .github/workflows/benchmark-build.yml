@@ -1,23 +1,11 @@
 name: Benchmark Build
 
 on:
-  push:
-    branches: [development]
-    paths:
-      - "FSM_Benchmark/**"
-      - "external/FSM_API/**"
-      - ".gitmodules"
-      - "global.json"
-      - "scripts/**"
-      - "tests/**"
-      - "docs/**"
-      - "README.md"
-      - ".github/workflows/benchmark-build.yml"
   pull_request:
     branches: [development]
     paths:
       - "FSM_Benchmark/**"
-      - "external/FSM_API/**"
+      - "external/FSM_API"
       - ".gitmodules"
       - "global.json"
       - "scripts/**"
@@ -36,7 +24,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build benchmark suite (.NET 10)
+    name: Build and smoke-test benchmark suite (.NET 10)
     runs-on: ubuntu-24.04
     steps:
       - name: Check out source and pinned FSM_API dependency
