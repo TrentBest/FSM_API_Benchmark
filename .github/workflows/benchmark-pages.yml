@@ -1,0 +1,65 @@
+name: FSM_API Benchmark Pages
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - "site/**"
+      - "README.md"
+      - ".github/workflows/benchmark-pages.yml"
+  pull_request:
+    branches: [development]
+    paths:
+      - "site/**"
+      - "README.md"
+      - ".github/workflows/benchmark-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fsm-api-benchmark-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Validate executive benchmark site
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out site source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Validate report data
+        run: |
+          set -euo pipefail
+          python3 -m json.tool site/data/benchmark-summary.json >/dev/null
+          test -s site/index.html
+          test -s site/data/benchmark-summary.json
+          grep -q 'fsm-benchmark.executive-report.v1' site/index.html
+          echo "PASS: executive site and report data are present and valid."
+
+      - name: Assemble Pages artifact
+        run: |
+          set -euo pipefail
+          mkdir -p _site/data
+          cp site/index.html _site/index.html
+          cp site/data/benchmark-summary.json _site/data/benchmark-summary.json
+          test -s _site/index.html
+          test -s _site/data/benchmark-summary.json
+
+      - name: Upload validated Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Publish through CiAi
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/development'
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    uses: TrentBest/TheSingularityWorkshop.CiAi/.github/workflows/deploy-pages.yml@5083c452b555d7645dd0c8ab01d76008026da436
